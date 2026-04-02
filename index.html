@@ -1023,15 +1023,12 @@ function renderBuyerCard(buyer) {
     } else if(pendingNoLink.length>0){
       sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+pendingNoLink.length+' 堂開課中</button>';
 } else {
-  // 如果是交換課程，還要確認對方有給我才算真正完成
-  var exAllDone = true;
-  if(pur.exchange && pur.exchange.type === 'exchange'){
-    exAllDone = pur.exchange.inStatus === 'received';
-  }
-  if(exAllDone){
-    sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
-  } else {
+  // 交換課程：我已發但對方還沒給我 → 繼續顯示待發送
+  var exStillPending = pur.exchange && pur.exchange.type === 'exchange' && pur.exchange.inStatus !== 'received';
+  if(exStillPending){
     sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待對方發送課程</button>';
+  } else {
+    sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
   }
 }
 
