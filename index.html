@@ -281,16 +281,19 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   </select>
 </div>
 <div class="ex-box" id="nb-exbox" style="display:none">
-  <div class="fg"><label>對方給我的課程名稱</label>
-    <input id="nb-ex-in" type="text" placeholder="例：塔羅入門"/>
-    <select id="nb-ex-in-status" style="margin-top:5px;">
-      <option value="pending">⏳ 未開課／待收</option>
-      <option value="received">✅ 已收到</option>
-    </select>
-  </div>
+<div class="fg"><label>對方給我的課程名稱</label>
+  <input class="num-inp" id="nb-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('nb-ex-in','nb-ex-in-preview')"/>
+  <div class="num-hint">用空格、頓號或逗號分隔</div>
+  <div class="parsed-nums" id="nb-ex-in-preview"></div>
+  <select id="nb-ex-in-status" style="margin-top:5px;">
+    <option value="pending">⏳ 未開課／待收</option>
+    <option value="received">✅ 已收到</option>
+  </select>
+</div>
 <div class="fg" id="nb-ex-out-wrap"><label>我給對方的課程名稱</label>
-  <input class="num-inp" id="nb-ex-out" type="text" placeholder="例：02" oninput="previewExOutNb()"/>
-  <div id="nb-ex-out-preview" style="font-size:.75rem;color:#805ad5;margin-top:2px;"></div>
+  <input class="num-inp" id="nb-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOutNb()"/>
+  <div class="num-hint">用空格、頓號或逗號分隔</div>
+  <div class="parsed-nums" id="nb-ex-out-preview"></div>
   <select id="nb-ex-out-status" style="margin-top:5px;">
     <option value="pending">⏳ 待發送</option>
     <option value="sent">✅ 已發送</option>
@@ -352,16 +355,19 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   </select>
 </div>
 <div class="ex-box" id="ap-exbox" style="display:none">
-  <div class="fg"><label>對方給我的課程名稱</label>
-    <input id="ap-ex-in" type="text" placeholder="例：塔羅入門"/>
-    <select id="ap-ex-in-status" style="margin-top:5px;">
-      <option value="pending">⏳ 未開課／待收</option>
-      <option value="received">✅ 已收到</option>
-    </select>
-  </div>
- <div class="fg" id="ap-ex-out-wrap"><label>我給對方的課程名稱</label>
-  <input id="ap-ex-out" type="text" placeholder="例：02" oninput="previewExOut()"/>
-  <div id="ap-ex-out-preview" style="font-size:.75rem;color:#805ad5;margin-top:2px;"></div>
+<div class="fg"><label>對方給我的課程名稱</label>
+  <input class="num-inp" id="ap-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('ap-ex-in','ap-ex-in-preview')"/>
+  <div class="num-hint">用空格、頓號或逗號分隔</div>
+  <div class="parsed-nums" id="ap-ex-in-preview"></div>
+  <select id="ap-ex-in-status" style="margin-top:5px;">
+    <option value="pending">⏳ 未開課／待收</option>
+    <option value="received">✅ 已收到</option>
+  </select>
+</div>
+<div class="fg" id="ap-ex-out-wrap"><label>我給對方的課程名稱</label>
+  <input class="num-inp" id="ap-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOut()"/>
+  <div class="num-hint">用空格、頓號或逗號分隔</div>
+  <div class="parsed-nums" id="ap-ex-out-preview"></div>
   <select id="ap-ex-out-status" style="margin-top:5px;">
     <option value="pending">⏳ 待發送</option>
     <option value="sent">✅ 已發送</option>
@@ -676,24 +682,12 @@ function doQuick() {
 window.doQuick = doQuick;
 
 function previewExOut() {
-  var val = document.getElementById('ap-ex-out').value.trim();
-  var preview = document.getElementById('ap-ex-out-preview');
-  if(!val){ preview.innerHTML=''; return; }
-  var c = findByNum(val);
-  preview.innerHTML = c
-    ? '<span class="pnum">'+esc(c.name)+'</span>'
-    : '<span class="pnum nf">#'+esc(val)+' 找不到</span>';
+  previewNums('ap-ex-out', 'ap-ex-out-preview');
 }
 window.previewExOut = previewExOut;
 
 function previewExOutNb() {
-  var val = document.getElementById('nb-ex-out').value.trim();
-  var preview = document.getElementById('nb-ex-out-preview');
-  if(!val){ preview.innerHTML=''; return; }
-  var c = findByNum(val);
-  preview.innerHTML = c
-    ? '<span class="pnum">'+esc(c.name)+'</span>'
-    : '<span class="pnum nf">#'+esc(val)+' 找不到</span>';
+  previewNums('nb-ex-out', 'nb-ex-out-preview');
 }
 window.previewExOutNb = previewExOutNb;
 
@@ -890,16 +884,17 @@ function addBuyer() {
   var note=document.getElementById('nb-note').value.trim();
   var exchange=null;
   if(type==='exchange'||type==='gift'){
-var outRaw = type==='exchange' ? document.getElementById('nb-ex-out').value.trim() : '';
-var outC = outRaw ? findByNum(outRaw) : null;
-exchange={
-  type:type,
-  inCourse:document.getElementById('nb-ex-in').value.trim(),
-  inStatus:document.getElementById('nb-ex-in-status').value,
-  outCourse: outC ? outC.name : outRaw,
-  outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
-};
-
+    var inNums=parseNums(document.getElementById('nb-ex-in').value);
+    var outNums=type==='exchange'?parseNums(document.getElementById('nb-ex-out').value):[];
+    exchange={
+      type:type,
+      inNums:inNums,
+      inCourse:document.getElementById('nb-ex-in').value.trim(),
+      inStatus:document.getElementById('nb-ex-in-status').value,
+      outNums:outNums,
+      outCourse:document.getElementById('nb-ex-out').value.trim(),
+      outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
+    };
   }
   var purchases=[{id:Date.now(),status:status,nums:nums,note:note,sentNums:[],exchange:exchange}];
   var buyers=lb().slice();
@@ -913,7 +908,9 @@ exchange={
   document.getElementById('nb-type').value='buy';
   document.getElementById('nb-exbox').style.display='none';
   document.getElementById('nb-ex-in').value='';
+  document.getElementById('nb-ex-in-preview').innerHTML='';
   document.getElementById('nb-ex-out').value='';
+  document.getElementById('nb-ex-out-preview').innerHTML='';
   toast('✅ 購買人已新增！');
   goBTab('pending',document.querySelectorAll('.bstab')[0]);
 }
@@ -1035,41 +1032,47 @@ if(pur.exchange){
   var inDone=ex.inStatus==='received';
   var outDone=ex.outStatus==='sent';
 
-  var inC = findByNum(ex.inCourse);
-  var inName = inC ? esc(inC.name) : esc(ex.inCourse||'—');
-
-  var inRow='<div class="ci">'+
-    '<span class="ci-num">收</span>'+
-    '<span class="ci-name">對方給我：'+inName+'</span>'+
-    (inDone
-      ? '<span class="ci-tag ci-sent">✓ 已收到</span>'
-      : '<span class="ci-tag ci-nolink">⏳ 待收</span>'+
-        '<input type="checkbox" class="ci-cb" data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="in" onchange="toggleExStatus(this)"/>'
-    )+
-  '</div>';
-
-  var outRow='';
-  if(ex.type==='exchange'){
-    var outC = findByNum(ex.outCourse);
-    var outHasLink = outC && hasLink(outC);
-    var outName = outC ? esc(outC.name) : esc(ex.outCourse||'—');
-
-    outRow='<div class="ci">'+
-      '<span class="ci-num">發</span>'+
-      '<span class="ci-name">我給對方：'+outName+'</span>'+
-      (outDone
-        ? '<span class="ci-tag ci-sent">✓ 已發送</span>'
-        : (outHasLink
-            ? '<span class="ci-tag ci-ready">待發</span>'+
-              '<input type="checkbox" class="ci-cb" data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out" onchange="toggleExStatus(this)"/>'
-            : '<span class="ci-tag ci-nolink">⏳ 未開課</span>'+
-              '<input type="checkbox" class="ci-cb" data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out" onchange="toggleExStatus(this)"/>'
-          )
+  var inNums=ex.inNums&&ex.inNums.length?ex.inNums:(ex.inCourse?[ex.inCourse]:[]);
+  var inRows=inNums.map(function(n){
+    var c=findByNum(n);
+    var name=c?esc(c.name):esc(n||'—');
+    return '<div class="ci">'+
+      '<span class="ci-num">收</span>'+
+      '<span class="ci-name">對方給我：'+name+'</span>'+
+      (inDone
+        ?'<span class="ci-tag ci-sent">✓ 已收到</span>'
+        :'<span class="ci-tag ci-nolink">⏳ 待收</span>'
       )+
     '</div>';
+  }).join('');
+
+  var inToggle=!inDone
+    ?'<div class="ci"><span class="ci-num"></span><span class="ci-name" style="font-size:.7rem;color:var(--sub);">標記全部已收到</span><input type="checkbox" class="ci-cb" data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="in" onchange="toggleExStatus(this)"/></div>'
+    :'';
+
+  var outRows='';
+  var outToggle='';
+  if(ex.type==='exchange'){
+    var outNums=ex.outNums&&ex.outNums.length?ex.outNums:(ex.outCourse?[ex.outCourse]:[]);
+    outRows=outNums.map(function(n){
+      var outC=findByNum(n);
+      var outName=outC?esc(outC.name):esc(n||'—');
+      return '<div class="ci">'+
+        '<span class="ci-num">發</span>'+
+        '<span class="ci-name">我給對方：'+outName+'</span>'+
+        (outDone
+          ?'<span class="ci-tag ci-sent">✓ 已發送</span>'
+          :'<span class="ci-tag ci-ready">待發</span>'
+        )+
+      '</div>';
+    }).join('');
+
+    outToggle=!outDone
+      ?'<div class="ci"><span class="ci-num"></span><span class="ci-name" style="font-size:.7rem;color:var(--sub);">標記全部已發送</span><input type="checkbox" class="ci-cb" data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out" onchange="toggleExStatus(this)"/></div>'
+      :'';
   }
 
-  exHtml='<div style="margin-top:4px;">'+inRow+outRow+'</div>';
+  exHtml='<div style="margin-top:4px;">'+inRows+inToggle+outRows+outToggle+'</div>';
 }
     
 pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
@@ -1193,15 +1196,15 @@ function saveAddPur() {
   var note=document.getElementById('ap-note').value.trim();
   var exchange=null;
   if(type==='exchange'||type==='gift'){
-    var inRaw=document.getElementById('ap-ex-in').value.trim();
-    var outRaw=type==='exchange'?document.getElementById('ap-ex-out').value.trim():'';
+    var inNums=parseNums(document.getElementById('ap-ex-in').value);
+    var outNums=type==='exchange'?parseNums(document.getElementById('ap-ex-out').value):[];
     exchange={
       type:type,
-      inNum:inRaw.split('｜')[0].trim(),
-      inCourse:inRaw,
+      inNums:inNums,
+      inCourse:document.getElementById('ap-ex-in').value.trim(),
       inStatus:document.getElementById('ap-ex-in-status').value,
-      outNum:outRaw?outRaw.split('｜')[0].trim():'',
-      outCourse:outRaw,
+      outNums:outNums,
+      outCourse:document.getElementById('ap-ex-out').value.trim(),
       outStatus:type==='exchange'?document.getElementById('ap-ex-out-status').value:''
     };
   }
