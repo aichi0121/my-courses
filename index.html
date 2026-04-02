@@ -933,7 +933,10 @@ function buyerNeedsPending(buyer) {
   var result = false;
   buyer.purchases.forEach(function(pur) {
     if(pur.exchange && pur.exchange.type === 'exchange') {
+      // 我還沒發 → 待發送
       if((pur.exchange.outStatus || 'pending') === 'pending') result = true;
+      // 我發了但對方還沒給我 → 也要留在待發送
+      if((pur.exchange.inStatus || 'pending') !== 'received') result = true;
     } else if(pur.exchange && pur.exchange.type === 'gift') {
       if((pur.exchange.inStatus || 'pending') === 'pending') result = true;
     } else {
