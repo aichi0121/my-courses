@@ -288,13 +288,14 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       <option value="received">✅ 已收到</option>
     </select>
   </div>
-  <div class="fg" id="nb-ex-out-wrap"><label>我給對方的課程名稱</label>
-    <input id="nb-ex-out" type="text" placeholder="例：八字入門"/>
-    <select id="nb-ex-out-status" style="margin-top:5px;">
-      <option value="pending">⏳ 待發送</option>
-      <option value="sent">✅ 已發送</option>
-    </select>
-  </div>
+<div class="fg" id="nb-ex-out-wrap"><label>我給對方的課程名稱</label>
+  <input class="num-inp" id="nb-ex-out" type="text" placeholder="例：02" oninput="previewExOutNb()"/>
+  <div id="nb-ex-out-preview" style="font-size:.75rem;color:#805ad5;margin-top:2px;"></div>
+  <select id="nb-ex-out-status" style="margin-top:5px;">
+    <option value="pending">⏳ 待發送</option>
+    <option value="sent">✅ 已發送</option>
+  </select>
+</div>
 </div>
 <div class="fg" id="nb-payment-wrap"><label>付款狀態</label>
           <select id="nb-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
@@ -685,6 +686,17 @@ function previewExOut() {
 }
 window.previewExOut = previewExOut;
 
+function previewExOutNb() {
+  var val = document.getElementById('nb-ex-out').value.trim();
+  var preview = document.getElementById('nb-ex-out-preview');
+  if(!val){ preview.innerHTML=''; return; }
+  var c = findByNum(val);
+  preview.innerHTML = c
+    ? '<span style="color:#805ad5;">'+esc(c.name)+'</span>'
+    : '<span style="color:#e53e3e;">找不到編號 '+esc(val)+'</span>';
+}
+window.previewExOutNb = previewExOutNb;
+
 function cpOne(btn){
   var id=parseFloat(btn.dataset.id);
   var c=lc().find(function(z){return z.id===id;});
@@ -878,13 +890,16 @@ function addBuyer() {
   var note=document.getElementById('nb-note').value.trim();
   var exchange=null;
   if(type==='exchange'||type==='gift'){
-    exchange={
-      type:type,
-      inCourse:document.getElementById('nb-ex-in').value.trim(),
-      inStatus:document.getElementById('nb-ex-in-status').value,
-      outCourse:type==='exchange'?document.getElementById('nb-ex-out').value.trim():'',
-      outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
-    };
+var outRaw = type==='exchange' ? document.getElementById('nb-ex-out').value.trim() : '';
+var outC = outRaw ? findByNum(outRaw) : null;
+exchange={
+  type:type,
+  inCourse:document.getElementById('nb-ex-in').value.trim(),
+  inStatus:document.getElementById('nb-ex-in-status').value,
+  outCourse: outC ? outC.name : outRaw,
+  outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
+};
+
   }
   var purchases=[{id:Date.now(),status:status,nums:nums,note:note,sentNums:[],exchange:exchange}];
   var buyers=lb().slice();
