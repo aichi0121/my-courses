@@ -1022,9 +1022,19 @@ function renderBuyerCard(buyer) {
       sendBtnHtml='<button class="send-btn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="copySend(this)">📋 複製並標記已發（'+pendingWithLink.length+' 堂）'+hint+'</button>';
     } else if(pendingNoLink.length>0){
       sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+pendingNoLink.length+' 堂開課中</button>';
-    } else {
-      sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
-    }
+} else {
+  // 如果是交換課程，還要確認對方有給我才算真正完成
+  var exAllDone = true;
+  if(pur.exchange && pur.exchange.type === 'exchange'){
+    exAllDone = pur.exchange.inStatus === 'received';
+  }
+  if(exAllDone){
+    sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
+  } else {
+    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待對方發送課程</button>';
+  }
+}
+
     var noteHtml=pur.note?'<div style="font-size:.7rem;color:var(--sub);margin-top:4px;">備註：'+esc(pur.note)+'</div>':'';
 var exHtml='';
 if(pur.exchange){
