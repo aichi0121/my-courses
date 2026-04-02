@@ -681,8 +681,8 @@ function previewExOut() {
   if(!val){ preview.innerHTML=''; return; }
   var c = findByNum(val);
   preview.innerHTML = c
-    ? '<span style="color:#805ad5;">'+esc(c.name)+'</span>'
-    : '<span style="color:#e53e3e;">找不到編號 '+esc(val)+'</span>';
+    ? '<span class="pnum">'+esc(c.name)+'</span>'
+    : '<span class="pnum nf">#'+esc(val)+' 找不到</span>';
 }
 window.previewExOut = previewExOut;
 
@@ -692,8 +692,8 @@ function previewExOutNb() {
   if(!val){ preview.innerHTML=''; return; }
   var c = findByNum(val);
   preview.innerHTML = c
-    ? '<span style="color:#805ad5;">'+esc(c.name)+'</span>'
-    : '<span style="color:#e53e3e;">找不到編號 '+esc(val)+'</span>';
+    ? '<span class="pnum">'+esc(c.name)+'</span>'
+    : '<span class="pnum nf">#'+esc(val)+' 找不到</span>';
 }
 window.previewExOutNb = previewExOutNb;
 
