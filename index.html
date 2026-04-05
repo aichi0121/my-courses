@@ -184,7 +184,10 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <div class="user-info">
     <img class="user-avatar" id="user-avatar" src="" alt=""/>
     <button class="logout-btn" onclick="signOutUser()">登出</button>
-    <button style="background:#fff;border:1.5px solid #e2e8f0;border-radius:50%;width:34px;height:34px;font-size:.9rem;cursor:pointer;" onclick="openCatMgr()">🏷️</button>
+    <!-- 🏷️ 分類管理 -->
+    <button style="background:#fff;border:1.5px solid #e2e8f0;border-radius:50%;width:34px;height:34px;font-size:.9rem;cursor:pointer;" title="管理分類" onclick="openCatMgr()">🏷️</button>
+    <!-- 🏢 平台管理 -->
+    <button style="background:#fff;border:1.5px solid #e2e8f0;border-radius:50%;width:34px;height:34px;font-size:.9rem;cursor:pointer;" title="管理平台" onclick="openPlatMgr()">🏢</button>
   </div>
 </div>
 <div class="wrap">
@@ -251,7 +254,13 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
           </div>
         </div>
         <div class="row3">
-          <div class="fg"><label>平台</label><input id="a-platform" type="text" placeholder="知識衛星、Hahow..."/></div>
+          <!-- ★ 平台改為 select + 管理按鈕 -->
+          <div class="fg"><label>平台</label>
+            <div class="row2">
+              <select id="a-platform" style="flex:1"><option value="">— 選擇平台 —</option></select>
+              <button class="btn-sm" onclick="openPlatMgr()">管理</button>
+            </div>
+          </div>
           <div class="fg"><label>講師</label><input id="a-instructor" type="text" placeholder="講師姓名"/></div>
         </div>
         <div class="fg"><label>課程時長</label><input id="a-duration" type="text" placeholder="例：8小時30分"/></div>
@@ -370,7 +379,13 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       </div>
     </div>
     <div class="row3">
-      <div class="fg"><label>平台</label><input id="e-platform" type="text"/></div>
+      <!-- ★ 編輯 modal 平台也改為 select -->
+      <div class="fg"><label>平台</label>
+        <div class="row2">
+          <select id="e-platform" style="flex:1"><option value="">— 選擇平台 —</option></select>
+          <button class="btn-sm" onclick="openPlatMgr()">管理</button>
+        </div>
+      </div>
       <div class="fg"><label>講師</label><input id="e-instructor" type="text"/></div>
     </div>
     <div class="fg"><label>課程時長</label><input id="e-duration" type="text"/></div>
@@ -438,6 +453,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <button class="msave" onclick="saveAddPur()">➕ 新增</button>
   </div>
 </div></div>
+<!-- 分類管理 Modal -->
 <div class="mo" id="catMo"><div class="mbox">
   <h3>🏷️ 管理分類</h3>
   <div id="catList"></div>
@@ -449,11 +465,23 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <button class="mcancel" onclick="closeMo('catMo')">關閉</button>
   </div>
 </div></div>
+<!-- ★ 平台管理 Modal -->
+<div class="mo" id="platMo"><div class="mbox">
+  <h3>🏢 管理平台</h3>
+  <div id="platList"></div>
+  <div class="acrow">
+    <input id="np-inp" type="text" placeholder="輸入新平台名稱..."/>
+    <button onclick="addPlat()">＋ 新增</button>
+  </div>
+  <div class="macts" style="margin-top:12px;">
+    <button class="mcancel" onclick="closeMo('platMo')">關閉</button>
+  </div>
+</div></div>
 <div id="toast"></div>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,getDoc,setDoc,collection,writeBatch,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,getDoc,setDoc,collection,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={
   apiKey:"AIzaSyCQcpPq_rRWlmhkhkYiGbjBJbfRvp_xvQI",
@@ -468,13 +496,13 @@ const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
 
-let _courses=[],_cats=[],_gs={},_buyers=[],_uid=null;
+// ★ 新增 _platforms
+let _courses=[],_cats=[],_platforms=[],_gs={},_buyers=[],_uid=null;
 
 function userDoc(col){return doc(db,'users',_uid,'data',col);}
 async function fbGet(col){const snap=await getDoc(userDoc(col));return snap.exists()?snap.data().value:[];}
 async function fbSet(col,value){await setDoc(userDoc(col),{value});}
 
-// ── syncPub：同步公開課程到 publicCourses ──
 async function syncPub(courses){
   try{
     const batch=writeBatch(db);
@@ -483,21 +511,13 @@ async function syncPub(courses){
       const ref=doc(colRef,String(c.id));
       if(c.isPublic){
         batch.set(ref,{
-          id:c.id,
-          name:c.name||'',
-          category:c.cat||'',
-          platform:c.platform||'',
-          instructor:c.instructor||'',
-          duration:c.duration||'',
-          status:c.status||'未開課',
-          price:Number(c.price)||500,
-          desc:c.desc||'',
-          isPublic:true,
-          updatedAt:Date.now()
+          id:c.id,name:c.name||'',category:c.cat||'',
+          platform:c.platform||'',instructor:c.instructor||'',
+          duration:c.duration||'',status:c.status||'未開課',
+          price:Number(c.price)||500,desc:c.desc||'',
+          isPublic:true,updatedAt:Date.now()
         });
-      }else{
-        batch.delete(ref);
-      }
+      }else{batch.delete(ref);}
     });
     await batch.commit();
   }catch(e){console.warn('syncPub error:',e);}
@@ -507,6 +527,9 @@ function lc(){return _courses;}
 function sc(d){_courses=d;fbSet('courses',d);syncPub(d);}
 function lcat(){return _cats;}
 function scat(d){_cats=d;fbSet('cats',d);renderFbar();refreshSels();}
+// ★ 平台 getter/setter
+function lplat(){return _platforms;}
+function splat(d){_platforms=d;fbSet('platforms',d);refreshPlatSels();}
 function lgs(){return _gs;}
 function sgs(d){_gs=d;fbSet('gs',d);}
 function lb(){return _buyers;}
@@ -530,15 +553,19 @@ onAuthStateChanged(auth,async function(user){
     _uid=user.uid;
     const avatar=document.getElementById('user-avatar');
     if(avatar&&user.photoURL)avatar.src=user.photoURL;
-    const[courses,cats,gs,buyers]=await Promise.all([fbGet('courses'),fbGet('cats'),fbGet('gs'),fbGet('buyers')]);
+    // ★ 同時載入 platforms
+    const[courses,cats,platforms,gs,buyers]=await Promise.all([
+      fbGet('courses'),fbGet('cats'),fbGet('platforms'),fbGet('gs'),fbGet('buyers')
+    ]);
     _courses=Array.isArray(courses)?courses:[];
     _cats=Array.isArray(cats)?cats:[];
+    _platforms=Array.isArray(platforms)?platforms:[];
     _gs=(gs&&typeof gs==='object'&&!Array.isArray(gs))?gs:{};
     _buyers=Array.isArray(buyers)?buyers:[];
     loading.classList.add('hide');
     loginScreen.classList.add('hide');
     appScreen.style.display='block';
-    refreshSels();renderList();
+    refreshSels();refreshPlatSels();renderList();
   }else{
     _uid=null;
     loading.classList.add('hide');
@@ -587,7 +614,7 @@ function goTab(tab,btn){
   if(tab==='list')renderList();
   if(tab==='add'){clearYt('a-yt');addYtRow('a-yt','','');}
   if(tab==='buyers')renderPending();
-  refreshSels();
+  refreshSels();refreshPlatSels();
 }
 window.goTab=goTab;
 
@@ -601,9 +628,20 @@ function refreshSels(){
   });
 }
 
+// ★ 平台下拉更新（新增/編輯兩個 select）
+function refreshPlatSels(){
+  ['a-platform','e-platform'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    var cur=el.value;var plats=lplat();
+    el.innerHTML='<option value="">— 選擇平台 —</option>'+plats.map(function(p){return'<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+    // 若舊值仍存在則保留，否則清空
+    if(plats.indexOf(cur)>=0)el.value=cur;else el.value='';
+  });
+}
+window.refreshPlatSels=refreshPlatSels;
+
 function renderFbar(){
   var cats=lcat();
-  // 新增「🔒未公開」filter
   var items=[{k:'all',l:'全部'},{k:'nolink',l:'⚠️無連結'},{k:'none',l:'未分類'},{k:'hidden',l:'🔒未公開'}];
   cats.forEach(function(c){items.push({k:c,l:c});});
   document.getElementById('fbar').innerHTML=items.map(function(i){
@@ -664,7 +702,7 @@ function renderList(){
   var fil=data.filter(function(c){
     if(activeCat==='nolink')return !hasLink(c);
     if(activeCat==='none')return !c.cat;
-    if(activeCat==='hidden')return !c.isPublic;  // 新增：未公開篩選
+    if(activeCat==='hidden')return !c.isPublic;
     if(activeCat!=='all')return c.cat===activeCat;
     return true;
   }).filter(function(c){return !q||(c.name||'').toLowerCase().indexOf(q)>=0;});
@@ -687,7 +725,7 @@ function renderList(){
   document.getElementById('list').innerHTML=groups.map(function(g){
     var open=gs[g.key]!==false;
     var nl=g.items.filter(function(c){return !hasLink(c);}).length;
-        var nlb=nl?' <span style="font-size:.66rem;background:rgba(255,255,255,.25);color:#fff;padding:1px 6px;border-radius:20px;margin-left:3px;">⚠️ '+nl+'</span>':'';
+    var nlb=nl?' <span style="font-size:.66rem;background:rgba(255,255,255,.25);color:#fff;padding:1px 6px;border-radius:20px;margin-left:3px;">⚠️ '+nl+'</span>':'';
     return '<div><div class="ghd" onclick="toggleGrp(\''+g.key+'\')"><div class="ghd-l"><span class="ghd-t">🏷️ '+esc(g.label)+nlb+'</span><span class="ghd-n">'+g.items.length+' 堂</span></div><span class="garr'+(open?' open':'')+'" id="ga-'+g.key+'">▶</span></div><div class="gbody" id="gb-'+g.key+'" style="display:'+(open?'block':'none')+'">'+g.items.map(renderCard).join('')+'</div></div>';
   }).join('');
 }
@@ -701,13 +739,14 @@ function renderCard(c){
     :'<span class="badge bhid">🔒 未公開</span>';
   var stBadge=c.status?'<span class="badge" style="background:#e0e7ff;color:#3730a3;">'+esc(c.status)+'</span>':'';
   var priceBadge=c.price?'<span class="badge" style="background:#fef9c3;color:#854d0e;">NT$'+esc(String(c.price))+'</span>':'';
+  var platBadge=c.platform?'<span class="badge" style="background:#f3e8ff;color:#6b21a8;">'+esc(c.platform)+'</span>':'';
   var ytH=yt.map(function(l){
     return '<div class="lr"><span class="badge byt">'+esc(l.label||'YT')+'</span><span class="ltext"><a href="'+esc(l.url)+'" target="_blank">'+esc(l.url)+'</a></span><button class="bcopy" data-url="'+esc(l.url)+'" onclick="cpBtn(this)">複製</button></div>';
   }).join('');
   var clH=c.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(c.cloud)+'" target="_blank">'+esc(c.cloud)+'</a></span><button class="bcopy" data-url="'+esc(c.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
   var ntH=c.note?'<div class="lr"><span class="badge bnt">備註</span><span class="ltext" style="white-space:normal">'+esc(c.note)+'</span></div>':'';
   var nlB=nl?'<div class="badge bnl">⚠️ 尚無連結</div>':'';
-  var metaRow='<div class="lr" style="gap:4px;flex-wrap:wrap;margin-bottom:6px;">'+pubBadge+stBadge+priceBadge+'</div>';
+  var metaRow='<div class="lr" style="gap:4px;flex-wrap:wrap;margin-bottom:6px;">'+pubBadge+stBadge+priceBadge+platBadge+'</div>';
   var cpB=nl?'<button class="bca" disabled>📋 複製全部連結</button>':'<button class="bca" data-id="'+c.id+'" onclick="cpCard(this)">📋 複製全部連結</button>';
   return '<div class="cc'+(nl?' nl':'')+'"><div class="ctop"><div class="ctitle">'+esc(c.name)+'</div><div class="cbtns"><button class="cbtn" data-id="'+c.id+'" onclick="openEdit(this)">✏️</button><button class="cbtn" data-id="'+c.id+'" onclick="delC(this)">🗑️</button></div></div>'+metaRow+nlB+ytH+clH+ntH+cpB+'</div>';
 }
@@ -785,8 +824,9 @@ function addCourse(){
     isPublic:isPublic,price:Number(price)||500,status:status,
     platform:platform,instructor:instructor,duration:duration,desc:desc});
   sc(data);
-  ['a-name','a-cloud','a-note','a-price','a-platform','a-instructor','a-duration','a-desc'].forEach(function(id){document.getElementById(id).value='';});
+  ['a-name','a-cloud','a-note','a-price','a-instructor','a-duration','a-desc'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('a-cat').value='';
+  document.getElementById('a-platform').value='';
   document.getElementById('a-ispublic').checked=true;
   document.getElementById('a-status').value='已完結';
   clearYt('a-yt');addYtRow('a-yt','','');
@@ -805,11 +845,22 @@ function openEdit(btn){
   document.getElementById('e-ispublic').checked=!!c.isPublic;
   document.getElementById('e-price').value=c.price||500;
   document.getElementById('e-status').value=c.status||'已完結';
-  document.getElementById('e-platform').value=c.platform||'';
   document.getElementById('e-instructor').value=c.instructor||'';
   document.getElementById('e-duration').value=c.duration||'';
   document.getElementById('e-desc').value=c.desc||'';
-  refreshSels();document.getElementById('e-cat').value=c.cat||'';
+  refreshSels();
+  document.getElementById('e-cat').value=c.cat||'';
+  // ★ 平台：先更新選單再設值（含舊資料相容）
+  refreshPlatSels();
+  var platEl=document.getElementById('e-platform');
+  var plats=lplat();
+  if(c.platform&&plats.indexOf(c.platform)<0){
+    // 舊資料的平台值不在清單中，補一個臨時 option
+    var opt=document.createElement('option');
+    opt.value=c.platform;opt.textContent=c.platform;
+    platEl.appendChild(opt);
+  }
+  platEl.value=c.platform||'';
   clearYt('e-yt');
   var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[{label:'YT',url:c.yt}]:[]);
   if(yt.length)yt.forEach(function(l){addYtRow('e-yt',l.label,l.url);});else addYtRow('e-yt','','');
@@ -911,6 +962,7 @@ function importBatch(){
 }
 window.importBatch=importBatch;
 
+// ── 分類管理 ──
 function openCatMgr(){renderCatList();refreshSels();openMo('catMo');}
 window.openCatMgr=openCatMgr;
 
@@ -940,6 +992,38 @@ function delCat(i){
 }
 window.delCat=delCat;
 
+// ── ★ 平台管理 ──
+function openPlatMgr(){renderPlatList();openMo('platMo');}
+window.openPlatMgr=openPlatMgr;
+
+function renderPlatList(){
+  var plats=lplat();
+  var el=document.getElementById('platList');
+  if(!plats.length){el.innerHTML='<div style="font-size:.8rem;color:var(--sub);text-align:center;padding:10px 0;">尚無平台，請新增</div>';return;}
+  el.innerHTML=plats.map(function(p,i){
+    return'<div class="catli"><span>🏢 '+esc(p)+'</span><button onclick="delPlat('+i+')">🗑️</button></div>';
+  }).join('');
+}
+
+function addPlat(){
+  var v=document.getElementById('np-inp').value.trim();
+  if(!v){toast('⚠️ 請輸入平台名稱');return;}
+  var plats=lplat().slice();
+  if(plats.indexOf(v)>=0){toast('⚠️ 平台已存在');return;}
+  plats.push(v);splat(plats);
+  document.getElementById('np-inp').value='';
+  renderPlatList();toast('✅ 平台已新增');
+}
+window.addPlat=addPlat;
+
+function delPlat(i){
+  if(!confirm('刪除此平台？已使用此平台的課程資料不受影響。'))return;
+  var plats=lplat().slice();plats.splice(i,1);splat(plats);
+  renderPlatList();toast('🗑️ 平台已刪除');
+}
+window.delPlat=delPlat;
+
+// ── 預覽編號 ──
 function previewNums(inputId,previewId){
   var raw=document.getElementById(inputId).value;
   var nums=parseNums(raw);
@@ -952,6 +1036,7 @@ function previewNums(inputId,previewId){
 }
 window.previewNums=previewNums;
 
+// ── 合購 ──
 function addBuyer(){
   var name=document.getElementById('nb-name').value.trim();
   if(!name){toast('⚠️ 請輸入姓名');return;}
@@ -1234,6 +1319,6 @@ function toggleExBox(prefix){
 window.toggleExBox=toggleExBox;
 window.lc=lc;window.lb=lb;window.findByNum=findByNum;
 window.renderPending=renderPending;window.previewNums=previewNums;
-  </script>
-  </body>
-  </html>
+</script>
+</body>
+</html>
