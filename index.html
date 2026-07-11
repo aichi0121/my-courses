@@ -91,6 +91,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .bsec-tabs{display:flex;gap:6px;margin-bottom:11px;}
 .bstab{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:9px;font-size:.76rem;font-weight:700;cursor:pointer;background:#fff;color:var(--sub);text-align:center;}
 .bstab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
+.bpay-filters{margin-bottom:8px;}
 .buyer-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:9px;border:1px solid var(--border);}
 .buyer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
 .buyer-name{font-size:.93rem;font-weight:700;color:var(--text);}
@@ -268,6 +269,11 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     </div>
     <div id="btc-all" style="display:none">
       <div class="sbar"><input id="buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderAllBuyers()"/></div>
+      <div class="fbar bpay-filters" id="buyer-pay-filters">
+        <button class="ftag on" onclick="setBuyerPayFilter('all',this)">全部</button>
+        <button class="ftag" onclick="setBuyerPayFilter('paid',this)">✅ 已付款</button>
+        <button class="ftag" onclick="setBuyerPayFilter('pre',this)">⏳ 預約未付款</button>
+      </div>
       <div id="all-buyers-list"></div>
     </div>
     <div id="btc-new" style="display:none">
@@ -930,6 +936,22 @@ function goBTab(tab,btn) {
 }
 window.goBTab = goBTab;
 
+var buyerPayFilter = 'all';
+
+function setBuyerPayFilter(filter, btn) {
+  buyerPayFilter = filter;
+  document.querySelectorAll('#buyer-pay-filters .ftag').forEach(function(b){b.classList.remove('on');});
+  if(btn) btn.classList.add('on');
+  renderAllBuyers();
+}
+window.setBuyerPayFilter = setBuyerPayFilter;
+
+function buyerHasPaymentStatus(buyer, status) {
+  return (buyer.purchases || []).some(function(pur) {
+    return !pur.exchange && (pur.status || 'paid') === status;
+  });
+}
+
 function buyerNeedsPending(buyer) {
   var result = false;
   buyer.purchases.forEach(function(pur) {
@@ -966,7 +988,11 @@ function renderPending() {
 
 function renderAllBuyers() {
   var q=(document.getElementById('buyer-search').value||'').trim().toLowerCase();
-  var buyers=lb().filter(function(b){return !q||(b.name||'').toLowerCase().indexOf(q)>=0;});
+  var buyers=lb().filter(function(b){
+    var matchName=!q||(b.name||'').toLowerCase().indexOf(q)>=0;
+    var matchPay=buyerPayFilter==='all'||buyerHasPaymentStatus(b,buyerPayFilter);
+    return matchName&&matchPay;
+  });
   var el=document.getElementById('all-buyers-list');
   if(!buyers.length){el.innerHTML='<div class="empty">📭 沒有符合的購買人</div>';return;}
   el.innerHTML=buyers.map(function(b){return renderBuyerCard(b);}).join('');
