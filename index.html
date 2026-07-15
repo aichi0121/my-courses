@@ -274,10 +274,6 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
-      <div class="group-filter">
-        <label>團購：</label>
-        <select id="pending-group-filter" onchange="setBuyerGroupFilter(this.value)"></select>
-      </div>
       <div class="show-done-row">
         <input type="checkbox" id="show-done" onchange="renderPending()"/>
         <label for="show-done">顯示已完成</label>
@@ -310,8 +306,16 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <div id="btc-new" style="display:none">
       <div class="card">
         <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增購買人</h2>
-        <div class="fg"><label>姓名／暱稱 *</label><input id="nb-name" type="text" placeholder="例：Kuang"/></div>
-        <div class="fg"><label>所屬團購</label><select id="nb-group"></select></div>
+        <div class="fg"><label>姓名／暱稱 *（可一次多位）</label><textarea id="nb-name" placeholder="例：Kuang&#10;小美&#10;Abby"></textarea>
+          <div class="num-hint">每行一位，也可用逗號、頓號或斜線分隔</div>
+        </div>
+        <div class="fg"><label>購買方式</label>
+          <select id="nb-mode" onchange="toggleBuyerMode()">
+            <option value="single">單買</option>
+            <option value="group">團購</option>
+          </select>
+        </div>
+        <div class="fg" id="nb-group-name-wrap" style="display:none"><label>團購名稱 *</label><input id="nb-group-name" type="text" placeholder="例：196、7月瑜伽團"/></div>
         <div class="fg"><label>交易類型</label>
   <select id="nb-type" onchange="toggleExBox('nb')">
     <option value="buy">💰 一般購買</option>
@@ -919,13 +923,49 @@ function previewNums(inputId,previewId) {
 }
 window.previewNums = previewNums;
 
+function parseBuyerNames(raw) {
+  return String(raw||'').split(/[\n,，、/／]+/).map(function(s){return s.trim();}).filter(Boolean);
+}
+
+function getOrCreateBuyerGroup(name, nums) {
+  name=(name||'').trim();
+  if(!name) return '';
+  var groups=lbg().slice();
+  var g=groups.find(function(x){return (x.name||'').trim()===name;});
+  if(g){
+    if(nums&&nums.length){
+      var oldNums=g.nums||[];
+      nums.forEach(function(n){if(oldNums.indexOf(n)<0) oldNums.push(n);});
+      g.nums=oldNums;
+      sbg(groups);
+    }
+    return String(g.id);
+  }
+  g={id:String(Date.now()),name:name,nums:(nums||[]).slice(),sentNums:[],createdAt:Date.now()};
+  groups.unshift(g);
+  sbg(groups);
+  return String(g.id);
+}
+
+function toggleBuyerMode() {
+  var mode=document.getElementById('nb-mode').value;
+  document.getElementById('nb-group-name-wrap').style.display=mode==='group'?'block':'none';
+}
+window.toggleBuyerMode = toggleBuyerMode;
+
 function addBuyer() {
-  var name=document.getElementById('nb-name').value.trim();
-  if(!name){toast('⚠️ 請輸入姓名');return;}
-  var groupId=document.getElementById('nb-group').value||'';
+  var names=parseBuyerNames(document.getElementById('nb-name').value);
+  if(!names.length){toast('⚠️ 請輸入姓名');return;}
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
   var type=document.getElementById('nb-type').value;
+  var mode=document.getElementById('nb-mode').value;
+  var groupName=document.getElementById('nb-group-name').value.trim();
+  var groupId='';
+  if(mode==='group'){
+    if(!groupName){toast('⚠️ 請輸入團購名稱');return;}
+    groupId=getOrCreateBuyerGroup(groupName,nums);
+  }
   var group=findBuyerGroup(groupId);
   if(!nums.length&&type==='buy'&&group&&(group.nums||[]).length) nums=(group.nums||[]).slice();
   if(!nums.length && type !== 'exchange' && type !== 'gift'){toast('⚠️ 請輸入課程編號');return;}
@@ -945,23 +985,28 @@ function addBuyer() {
       outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
     };
   }
-  var purchases=[{id:Date.now(),status:status,nums:nums,note:note,sentNums:[],exchange:exchange}];
   var buyers=lb().slice();
-  buyers.unshift({id:Date.now()+1,name:name,groupId:groupId,purchases:purchases});
+  var baseId=Date.now();
+  names.slice().reverse().forEach(function(name,idx){
+    var purchases=[{id:baseId+idx,status:status,nums:nums.slice(),note:note,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
+    buyers.unshift({id:baseId+1000+idx,name:name,groupId:groupId,purchases:purchases});
+  });
   sb(buyers);
   document.getElementById('nb-name').value='';
+  document.getElementById('nb-group-name').value='';
   document.getElementById('nb-nums').value='';
   document.getElementById('nb-note').value='';
   document.getElementById('nb-preview').innerHTML='';
   document.getElementById('nb-status').value='paid';
-  document.getElementById('nb-group').value=groupId;
+  document.getElementById('nb-mode').value='single';
+  toggleBuyerMode();
   document.getElementById('nb-type').value='buy';
   document.getElementById('nb-exbox').style.display='none';
   document.getElementById('nb-ex-in').value='';
   document.getElementById('nb-ex-in-preview').innerHTML='';
   document.getElementById('nb-ex-out').value='';
   document.getElementById('nb-ex-out-preview').innerHTML='';
-  toast('✅ 購買人已新增！');
+  toast('✅ 已新增 '+names.length+' 位購買人！');
   goBTab('pending',document.querySelectorAll('.bstab')[0]);
 }
 window.addBuyer = addBuyer;
@@ -988,7 +1033,7 @@ function buyerGroupId(buyer) {
 }
 
 function buyerGroupName(groupId) {
-  if(!groupId) return '單買／未分組';
+  if(!groupId) return '單買';
   var g=lbg().find(function(x){return String(x.id)===String(groupId);});
   return g ? g.name : '已刪除團購';
 }
@@ -1004,17 +1049,17 @@ function arrSame(a,b) {
 
 function refreshBuyerGroupSels() {
   var groups=lbg();
-  var opts='<option value="">單買／未分組</option>'+groups.map(function(g){
+  var opts='<option value="">單買</option>'+groups.map(function(g){
     return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
   }).join('');
-  ['nb-group','eb-group'].forEach(function(id){
+  ['eb-group'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.innerHTML=opts;
   });
-  var filterOpts='<option value="all">全部團購＋單買</option><option value="">單買／未分組</option>'+groups.map(function(g){
+  var filterOpts='<option value="all">全部</option><option value="">單買</option>'+groups.map(function(g){
     return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
   }).join('');
-  ['pending-group-filter','all-group-filter'].forEach(function(id){
+  ['all-group-filter'].forEach(function(id){
     var el=document.getElementById(id);
     if(!el) return;
     var old=el.value||buyerGroupFilter;
@@ -1025,7 +1070,7 @@ function refreshBuyerGroupSels() {
 
 function setBuyerGroupFilter(groupId) {
   buyerGroupFilter = groupId;
-  ['pending-group-filter','all-group-filter'].forEach(function(id){
+  ['all-group-filter'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.value=groupId;
   });
@@ -1073,7 +1118,7 @@ function renderBuyerGroups() {
   var el=document.getElementById('buyer-group-list');
   if(!el) return;
   refreshBuyerGroupSels();
-  var groups=[{id:'',name:'單買／未分組',fixed:true}].concat(lbg());
+  var groups=[{id:'',name:'單買',fixed:true}].concat(lbg());
   el.innerHTML=groups.map(function(g){
     var st=buyerGroupStats(String(g.id));
     var del=g.fixed?'':'<button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button>';
@@ -1172,7 +1217,7 @@ window.copyBuyerGroupLinks = copyBuyerGroupLinks;
 function delBuyerGroup(btn) {
   var gid=String(btn.dataset.gid);
   var count=lb().filter(function(b){return buyerGroupId(b)===gid;}).length;
-  if(count>0&&!confirm('這個團購有 '+count+' 位購買人，刪除後會改成單買／未分組。確定刪除？')) return;
+  if(count>0&&!confirm('這個團購有 '+count+' 位購買人，刪除後會改成單買。確定刪除？')) return;
   sbg(lbg().filter(function(g){return String(g.id)!==gid;}));
   if(count>0){
     var buyers=lb().slice();
@@ -1227,7 +1272,6 @@ function renderPending() {
   buyers.forEach(function(buyer){
     var needs=buyerNeedsPending(buyer);
     if(!needs&&!showDone) return;
-    if(!buyerMatchesGroup(buyer)) return;
     if(buyerPayFilter!=='all'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
     html+=renderBuyerCard(buyer);
   });
@@ -1259,7 +1303,8 @@ function renderBuyerCard(buyer) {
   } else if(firstType==='gift'){
     stLabel='<span class="bst" style="background:#ebf8ff;color:#2b6cb0;">📥 贈送</span>';
   }
-  stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(buyerGroupId(buyer)))+'</span>'+stLabel;
+  var gid=buyerGroupId(buyer);
+  if(gid) stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(gid))+'</span>'+stLabel;
   var pHtml='';
   buyer.purchases.forEach(function(pur,pi){
     var sentNums=pur.sentNums||[];
