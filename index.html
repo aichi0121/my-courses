@@ -101,6 +101,9 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .group-meta{font-size:.7rem;color:var(--sub);margin-top:4px;}
 .group-add{display:flex;gap:7px;margin-bottom:10px;}
 .group-add input{flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;background:#fff;color:var(--text);outline:none;}
+.group-course-box{margin-top:9px;background:#f0f4f8;border:1px solid var(--border);border-radius:9px;padding:9px;}
+.group-course-actions{display:flex;gap:7px;margin-top:7px;}
+.group-course-actions .btn-sm{flex:1;}
 .buyer-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:9px;border:1px solid var(--border);}
 .buyer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
 .buyer-name{font-size:.93rem;font-weight:700;color:var(--text);}
@@ -923,6 +926,8 @@ function addBuyer() {
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
   var type=document.getElementById('nb-type').value;
+  var group=findBuyerGroup(groupId);
+  if(!nums.length&&type==='buy'&&group&&(group.nums||[]).length) nums=(group.nums||[]).slice();
   if(!nums.length && type !== 'exchange' && type !== 'gift'){toast('⚠️ 請輸入課程編號');return;}
   var status=document.getElementById('nb-status').value;
   var note=document.getElementById('nb-note').value.trim();
@@ -988,6 +993,15 @@ function buyerGroupName(groupId) {
   return g ? g.name : '已刪除團購';
 }
 
+function findBuyerGroup(groupId) {
+  return lbg().find(function(x){return String(x.id)===String(groupId);});
+}
+
+function arrSame(a,b) {
+  a=a||[]; b=b||[];
+  return a.length===b.length&&a.every(function(x,i){return String(x)===String(b[i]);});
+}
+
 function refreshBuyerGroupSels() {
   var groups=lbg();
   var opts='<option value="">單買／未分組</option>'+groups.map(function(g){
@@ -1031,6 +1045,30 @@ function buyerGroupStats(groupId) {
   return {buyers:buyers.length,paid:paid,pre:pre,pending:pending};
 }
 
+function renderGroupCourseRows(nums, sentNums) {
+  nums=nums||[]; sentNums=sentNums||[];
+  if(!nums.length) return '<div class="qempty" style="padding:10px 0;">尚未設定團購課程</div>';
+  return nums.map(function(n){
+    var c=findByNum(n);
+    var sent=sentNums.indexOf(n)>=0;
+    var tag;
+    if(!c) tag='<span class="ci-tag ci-nolink">找不到課程</span>';
+    else if(!hasLink(c)) tag='<span class="ci-tag ci-nolink">⏳ 未開課</span>';
+    else if(sent) tag='<span class="ci-tag ci-sent">✓ 已發</span>';
+    else tag='<span class="ci-tag ci-ready">可發送</span>';
+    return '<div class="ci"><span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name):'#'+esc(n))+'</span>'+tag+'</div>';
+  }).join('');
+}
+
+function previewGroupNums(inp) {
+  var card=inp.closest('.group-card');
+  if(!card) return;
+  var nums=parseNums(inp.value);
+  var preview=card.querySelector('.group-course-preview');
+  if(preview) preview.innerHTML=renderGroupCourseRows(nums,[]);
+}
+window.previewGroupNums = previewGroupNums;
+
 function renderBuyerGroups() {
   var el=document.getElementById('buyer-group-list');
   if(!el) return;
@@ -1039,7 +1077,15 @@ function renderBuyerGroups() {
   el.innerHTML=groups.map(function(g){
     var st=buyerGroupStats(String(g.id));
     var del=g.fixed?'':'<button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button>';
-    return '<div class="group-card"><div class="group-top"><div><div class="group-name">'+esc(g.name)+'</div><div class="group-meta">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'｜待處理 '+st.pending+'</div></div><div>'+del+'</div></div></div>';
+    var courseBox=g.fixed?'':'<div class="group-course-box">'+
+      '<div class="fg" style="margin-bottom:7px;"><label>團購課程編號</label>'+
+      '<input class="num-inp group-nums" data-gid="'+g.id+'" value="'+esc((g.nums||[]).join(' '))+'" placeholder="例：80 30 33" oninput="previewGroupNums(this)"/>'+
+      '<div class="num-hint">這裡設定後，新增此團成員時可不必重複輸入課程編號</div></div>'+
+      '<div class="group-course-preview">'+renderGroupCourseRows(g.nums||[],g.sentNums||[])+'</div>'+
+      '<div class="group-course-actions"><button class="btn-sm" data-gid="'+g.id+'" onclick="saveBuyerGroupNums(this)">儲存課程</button>'+
+      '<button class="btn-sm" data-gid="'+g.id+'" onclick="copyBuyerGroupLinks(this)">📋 複製發送</button></div>'+
+    '</div>';
+    return '<div class="group-card"><div class="group-top"><div><div class="group-name">'+esc(g.name)+'</div><div class="group-meta">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'｜待處理 '+st.pending+'</div></div><div>'+del+'</div></div>'+courseBox+'</div>';
   }).join('');
 }
 
@@ -1048,12 +1094,80 @@ function addBuyerGroup() {
   var name=(inp.value||'').trim();
   if(!name){toast('⚠️ 請輸入團購名稱');return;}
   var groups=lbg().slice();
-  groups.unshift({id:String(Date.now()),name:name,createdAt:Date.now()});
+  groups.unshift({id:String(Date.now()),name:name,nums:[],sentNums:[],createdAt:Date.now()});
   sbg(groups);
   inp.value='';
   toast('✅ 團購已新增');
 }
 window.addBuyerGroup = addBuyerGroup;
+
+function saveBuyerGroupNums(btn) {
+  var gid=String(btn.dataset.gid);
+  var card=btn.closest('.group-card');
+  var inp=card?card.querySelector('.group-nums'):null;
+  var nums=parseNums(inp?inp.value:'');
+  var groups=lbg().slice();
+  var g=groups.find(function(x){return String(x.id)===gid;});
+  if(!g) return;
+  var oldNums=(g.nums||[]).slice();
+  g.nums=nums;
+  g.sentNums=(g.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;});
+  sbg(groups);
+
+  var buyers=lb().slice();
+  buyers.forEach(function(b){
+    if(buyerGroupId(b)!==gid) return;
+    if(!b.purchases) b.purchases=[];
+    var pur=b.purchases.find(function(p){return !p.exchange;});
+    if(!pur){
+      pur={id:Date.now(),status:'paid',nums:[],note:'',sentNums:[],exchange:null};
+      b.purchases.push(pur);
+    }
+    if(arrSame(pur.nums||[],oldNums)) pur.nums=nums.slice();
+    else nums.forEach(function(n){if((pur.nums||[]).indexOf(n)<0){if(!pur.nums)pur.nums=[];pur.nums.push(n);}});
+    pur.sentNums=(pur.sentNums||[]).filter(function(n){return (pur.nums||[]).indexOf(n)>=0;});
+  });
+  sb(buyers);
+  renderPending(); renderAllBuyers(); toast('✅ 團購課程已儲存');
+}
+window.saveBuyerGroupNums = saveBuyerGroupNums;
+
+function copyBuyerGroupLinks(btn) {
+  var gid=String(btn.dataset.gid);
+  var card=btn.closest('.group-card');
+  var inp=card?card.querySelector('.group-nums'):null;
+  if(inp){
+    var typedNums=parseNums(inp.value);
+    var current=findBuyerGroup(gid);
+    if(current&&!arrSame(current.nums||[],typedNums)) saveBuyerGroupNums(btn);
+  }
+  var groups=lbg().slice();
+  var g=groups.find(function(x){return String(x.id)===gid;});
+  if(!g) return;
+  var sentNums=g.sentNums||[];
+  var pendingNums=(g.nums||[]).filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
+  if(!pendingNums.length){toast('沒有可複製的團購連結');return;}
+  var texts=pendingNums.map(function(n){var c=findByNum(n);return c?ctext(c):'';}).filter(Boolean);
+  clip(texts.join('\n\n'),function(){
+    if(!g.sentNums) g.sentNums=[];
+    pendingNums.forEach(function(n){if(g.sentNums.indexOf(n)<0)g.sentNums.push(n);});
+    sbg(groups);
+    var buyers=lb().slice();
+    buyers.forEach(function(b){
+      if(buyerGroupId(b)!==gid) return;
+      (b.purchases||[]).forEach(function(pur){
+        if(pur.exchange) return;
+        if(!pur.sentNums) pur.sentNums=[];
+        pendingNums.forEach(function(n){
+          if((pur.nums||[]).indexOf(n)>=0&&pur.sentNums.indexOf(n)<0) pur.sentNums.push(n);
+        });
+      });
+    });
+    sb(buyers);
+    renderPending(); renderAllBuyers(); toast('✅ 已複製並標記本團 '+pendingNums.length+' 堂');
+  });
+}
+window.copyBuyerGroupLinks = copyBuyerGroupLinks;
 
 function delBuyerGroup(btn) {
   var gid=String(btn.dataset.gid);
