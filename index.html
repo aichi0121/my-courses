@@ -92,6 +92,15 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .bstab{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:9px;font-size:.76rem;font-weight:700;cursor:pointer;background:#fff;color:var(--sub);text-align:center;}
 .bstab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
 .bpay-filters{margin-bottom:8px;}
+.group-filter{display:flex;gap:7px;align-items:center;margin-bottom:8px;}
+.group-filter label{font-size:.72rem;color:var(--sub);font-weight:700;white-space:nowrap;}
+.group-filter select{flex:1;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;background:#fff;color:var(--text);outline:none;}
+.group-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:8px;border:1px solid var(--border);}
+.group-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.group-name{font-size:.9rem;font-weight:700;color:var(--text);}
+.group-meta{font-size:.7rem;color:var(--sub);margin-top:4px;}
+.group-add{display:flex;gap:7px;margin-bottom:10px;}
+.group-add input{flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;background:#fff;color:var(--text);outline:none;}
 .buyer-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:9px;border:1px solid var(--border);}
 .buyer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
 .buyer-name{font-size:.93rem;font-weight:700;color:var(--text);}
@@ -257,10 +266,15 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <div class="tc" id="tc-buyers">
     <div class="bsec-tabs">
       <button class="bstab on" onclick="goBTab('pending',this)">⏳ 待發送</button>
+      <button class="bstab" onclick="goBTab('groups',this)">🗂 團購</button>
       <button class="bstab" onclick="goBTab('all',this)">👥 全部名單</button>
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
+      <div class="group-filter">
+        <label>團購：</label>
+        <select id="pending-group-filter" onchange="setBuyerGroupFilter(this.value)"></select>
+      </div>
       <div class="show-done-row">
         <input type="checkbox" id="show-done" onchange="renderPending()"/>
         <label for="show-done">顯示已完成</label>
@@ -272,7 +286,21 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       </div>
       <div id="pending-list"></div>
     </div>
+    <div id="btc-groups" style="display:none">
+      <div class="card">
+        <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">🗂 團購／群組</h2>
+        <div class="group-add">
+          <input id="new-buyer-group" type="text" placeholder="例：7月瑜伽團、A群組交換課"/>
+          <button class="btn-sm" onclick="addBuyerGroup()">新增</button>
+        </div>
+        <div id="buyer-group-list"></div>
+      </div>
+    </div>
     <div id="btc-all" style="display:none">
+      <div class="group-filter">
+        <label>團購：</label>
+        <select id="all-group-filter" onchange="setBuyerGroupFilter(this.value)"></select>
+      </div>
       <div class="sbar"><input id="buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderAllBuyers()"/></div>
       <div id="all-buyers-list"></div>
     </div>
@@ -280,6 +308,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       <div class="card">
         <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增購買人</h2>
         <div class="fg"><label>姓名／暱稱 *</label><input id="nb-name" type="text" placeholder="例：Kuang"/></div>
+        <div class="fg"><label>所屬團購</label><select id="nb-group"></select></div>
         <div class="fg"><label>交易類型</label>
   <select id="nb-type" onchange="toggleExBox('nb')">
     <option value="buy">💰 一般購買</option>
@@ -342,6 +371,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <h3>✏️ 編輯購買人</h3>
   <input type="hidden" id="eb-id"/>
   <div class="fg"><label>姓名／暱稱 *</label><input id="eb-name" type="text"/></div>
+  <div class="fg"><label>所屬團購</label><select id="eb-group"></select></div>
   <div class="fg"><label>付款狀態</label>
     <select id="eb-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
   </div>
@@ -430,6 +460,7 @@ let _courses = [];
 let _cats = [];
 let _gs = {};
 let _buyers = [];
+let _buyerGroups = [];
 let _uid = null;
 
 // ── Firebase 讀寫 ──
@@ -452,7 +483,9 @@ function scat(d) { _cats = d; fbSet('cats', d); renderFbar(); refreshSels(); }
 function lgs() { return _gs; }
 function sgs(d) { _gs = d; fbSet('gs', d); }
 function lb() { return _buyers; }
-function sb(d) { _buyers = d; fbSet('buyers', d); }
+function sb(d) { _buyers = d; fbSet('buyers', d); renderBuyerGroups(); }
+function lbg() { return _buyerGroups; }
+function sbg(d) { _buyerGroups = d; fbSet('buyerGroups', d); refreshBuyerGroupSels(); renderBuyerGroups(); }
 
 // ── 登入 / 登出 ──
 window.signInWithGoogle = async function() {
@@ -478,19 +511,21 @@ onAuthStateChanged(auth, async (user) => {
     if (avatar && user.photoURL) avatar.src = user.photoURL;
 
     // 從 Firestore 載入資料
-    const [courses, cats, gs, buyers] = await Promise.all([
-      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers')
+    const [courses, cats, gs, buyers, buyerGroups] = await Promise.all([
+      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers'), fbGet('buyerGroups')
     ]);
     _courses = Array.isArray(courses) ? courses : [];
     _cats = Array.isArray(cats) ? cats : [];
     _gs = (gs && typeof gs === 'object' && !Array.isArray(gs)) ? gs : {};
     _buyers = Array.isArray(buyers) ? buyers : [];
+    _buyerGroups = Array.isArray(buyerGroups) ? buyerGroups : [];
 
     loading.classList.add('hide');
     loginScreen.classList.add('hide');
     appScreen.style.display = 'block';
 
     refreshSels();
+    refreshBuyerGroupSels();
     renderList();
   } else {
     _uid = null;
@@ -883,6 +918,8 @@ window.previewNums = previewNums;
 
 function addBuyer() {
   var name=document.getElementById('nb-name').value.trim();
+  if(!name){toast('⚠️ 請輸入姓名');return;}
+  var groupId=document.getElementById('nb-group').value||'';
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
   var type=document.getElementById('nb-type').value;
@@ -905,13 +942,14 @@ function addBuyer() {
   }
   var purchases=[{id:Date.now(),status:status,nums:nums,note:note,sentNums:[],exchange:exchange}];
   var buyers=lb().slice();
-  buyers.unshift({id:Date.now()+1,name:name,purchases:purchases});
+  buyers.unshift({id:Date.now()+1,name:name,groupId:groupId,purchases:purchases});
   sb(buyers);
   document.getElementById('nb-name').value='';
   document.getElementById('nb-nums').value='';
   document.getElementById('nb-note').value='';
   document.getElementById('nb-preview').innerHTML='';
   document.getElementById('nb-status').value='paid';
+  document.getElementById('nb-group').value=groupId;
   document.getElementById('nb-type').value='buy';
   document.getElementById('nb-exbox').style.display='none';
   document.getElementById('nb-ex-in').value='';
@@ -928,15 +966,109 @@ function goBTab(tab,btn) {
   document.querySelectorAll('.bstab').forEach(function(b){b.classList.remove('on');});
   if(btn) btn.classList.add('on');
   document.getElementById('btc-pending').style.display='none';
+  document.getElementById('btc-groups').style.display='none';
   document.getElementById('btc-all').style.display='none';
   document.getElementById('btc-new').style.display='none';
   if(tab==='pending'){document.getElementById('btc-pending').style.display='block';renderPending();}
+  else if(tab==='groups'){document.getElementById('btc-groups').style.display='block';renderBuyerGroups();}
   else if(tab==='all'){document.getElementById('btc-all').style.display='block';renderAllBuyers();}
-  else if(tab==='new'){document.getElementById('btc-new').style.display='block';}
+  else if(tab==='new'){document.getElementById('btc-new').style.display='block';refreshBuyerGroupSels();}
 }
 window.goBTab = goBTab;
 
-var buyerPayFilter = 'all';
+var buyerPayFilter = 'all', buyerGroupFilter = 'all';
+
+function buyerGroupId(buyer) {
+  return buyer && buyer.groupId ? String(buyer.groupId) : '';
+}
+
+function buyerGroupName(groupId) {
+  if(!groupId) return '單買／未分組';
+  var g=lbg().find(function(x){return String(x.id)===String(groupId);});
+  return g ? g.name : '已刪除團購';
+}
+
+function refreshBuyerGroupSels() {
+  var groups=lbg();
+  var opts='<option value="">單買／未分組</option>'+groups.map(function(g){
+    return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
+  }).join('');
+  ['nb-group','eb-group'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.innerHTML=opts;
+  });
+  var filterOpts='<option value="all">全部團購＋單買</option><option value="">單買／未分組</option>'+groups.map(function(g){
+    return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
+  }).join('');
+  ['pending-group-filter','all-group-filter'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    var old=el.value||buyerGroupFilter;
+    el.innerHTML=filterOpts;
+    el.value=Array.from(el.options).some(function(o){return o.value===old;})?old:'all';
+  });
+}
+
+function setBuyerGroupFilter(groupId) {
+  buyerGroupFilter = groupId;
+  ['pending-group-filter','all-group-filter'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value=groupId;
+  });
+  renderPending(); renderAllBuyers();
+}
+window.setBuyerGroupFilter = setBuyerGroupFilter;
+
+function buyerMatchesGroup(buyer) {
+  return buyerGroupFilter==='all'||buyerGroupId(buyer)===buyerGroupFilter;
+}
+
+function buyerGroupStats(groupId) {
+  var buyers=lb().filter(function(b){return buyerGroupId(b)===groupId;});
+  var paid=buyers.filter(function(b){return buyerHasPaymentStatus(b,'paid');}).length;
+  var pre=buyers.filter(function(b){return buyerHasPaymentStatus(b,'pre');}).length;
+  var pending=buyers.filter(buyerNeedsPending).length;
+  return {buyers:buyers.length,paid:paid,pre:pre,pending:pending};
+}
+
+function renderBuyerGroups() {
+  var el=document.getElementById('buyer-group-list');
+  if(!el) return;
+  refreshBuyerGroupSels();
+  var groups=[{id:'',name:'單買／未分組',fixed:true}].concat(lbg());
+  el.innerHTML=groups.map(function(g){
+    var st=buyerGroupStats(String(g.id));
+    var del=g.fixed?'':'<button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button>';
+    return '<div class="group-card"><div class="group-top"><div><div class="group-name">'+esc(g.name)+'</div><div class="group-meta">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'｜待處理 '+st.pending+'</div></div><div>'+del+'</div></div></div>';
+  }).join('');
+}
+
+function addBuyerGroup() {
+  var inp=document.getElementById('new-buyer-group');
+  var name=(inp.value||'').trim();
+  if(!name){toast('⚠️ 請輸入團購名稱');return;}
+  var groups=lbg().slice();
+  groups.unshift({id:String(Date.now()),name:name,createdAt:Date.now()});
+  sbg(groups);
+  inp.value='';
+  toast('✅ 團購已新增');
+}
+window.addBuyerGroup = addBuyerGroup;
+
+function delBuyerGroup(btn) {
+  var gid=String(btn.dataset.gid);
+  var count=lb().filter(function(b){return buyerGroupId(b)===gid;}).length;
+  if(count>0&&!confirm('這個團購有 '+count+' 位購買人，刪除後會改成單買／未分組。確定刪除？')) return;
+  sbg(lbg().filter(function(g){return String(g.id)!==gid;}));
+  if(count>0){
+    var buyers=lb().slice();
+    buyers.forEach(function(b){if(buyerGroupId(b)===gid)b.groupId='';});
+    sb(buyers);
+  }
+  if(buyerGroupFilter===gid) setBuyerGroupFilter('all');
+  renderPending(); renderAllBuyers(); toast('🗑️ 團購已刪除');
+}
+window.delBuyerGroup = delBuyerGroup;
 
 function setBuyerPayFilter(filter, btn) {
   buyerPayFilter = filter;
@@ -981,6 +1113,7 @@ function renderPending() {
   buyers.forEach(function(buyer){
     var needs=buyerNeedsPending(buyer);
     if(!needs&&!showDone) return;
+    if(!buyerMatchesGroup(buyer)) return;
     if(buyerPayFilter!=='all'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
     html+=renderBuyerCard(buyer);
   });
@@ -989,7 +1122,10 @@ function renderPending() {
 
 function renderAllBuyers() {
   var q=(document.getElementById('buyer-search').value||'').trim().toLowerCase();
-  var buyers=lb().filter(function(b){return !q||(b.name||'').toLowerCase().indexOf(q)>=0;});
+  var buyers=lb().filter(function(b){
+    var matchName=!q||(b.name||'').toLowerCase().indexOf(q)>=0;
+    return matchName&&buyerMatchesGroup(b);
+  });
   var el=document.getElementById('all-buyers-list');
   if(!buyers.length){el.innerHTML='<div class="empty">📭 沒有符合的購買人</div>';return;}
   el.innerHTML=buyers.map(function(b){return renderBuyerCard(b);}).join('');
@@ -1009,6 +1145,7 @@ function renderBuyerCard(buyer) {
   } else if(firstType==='gift'){
     stLabel='<span class="bst" style="background:#ebf8ff;color:#2b6cb0;">📥 贈送</span>';
   }
+  stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(buyerGroupId(buyer)))+'</span>'+stLabel;
   var pHtml='';
   buyer.purchases.forEach(function(pur,pi){
     var sentNums=pur.sentNums||[];
@@ -1168,8 +1305,10 @@ window.copySend = copySend;
 function openEditBuyer(btn) {
   var bid=parseInt(btn.dataset.bid);
   var b=lb().find(function(x){return x.id===bid;}); if(!b) return;
+  refreshBuyerGroupSels();
   document.getElementById('eb-id').value=b.id;
   document.getElementById('eb-name').value=b.name||'';
+  document.getElementById('eb-group').value=buyerGroupId(b);
   var st=b.purchases&&b.purchases[0]?b.purchases[0].status:'paid';
   document.getElementById('eb-status').value=st;
   document.getElementById('eb-note').value=(b.purchases&&b.purchases[0]&&b.purchases[0].note)||'';
@@ -1182,10 +1321,12 @@ function saveEditBuyer() {
   var name=document.getElementById('eb-name').value.trim();
   if(!name){toast('⚠️ 請輸入姓名');return;}
   var status=document.getElementById('eb-status').value;
+  var groupId=document.getElementById('eb-group').value||'';
   var note=document.getElementById('eb-note').value.trim();
   var buyers=lb().slice();
   var i=buyers.findIndex(function(x){return x.id===id;}); if(i===-1) return;
   buyers[i].name=name;
+  buyers[i].groupId=groupId;
   if(buyers[i].purchases&&buyers[i].purchases[0]){
     buyers[i].purchases[0].status=status;
     buyers[i].purchases[0].note=note;
