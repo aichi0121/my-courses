@@ -276,8 +276,6 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <div class="tc" id="tc-buyers">
     <div class="bsec-tabs">
       <button class="bstab on" onclick="goBTab('pending',this)">⏳ 待發送</button>
-      <button class="bstab" onclick="goBTab('groups',this)">🗂 團購</button>
-      <button class="bstab" onclick="goBTab('all',this)">👥 全部名單</button>
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
@@ -396,6 +394,24 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <div class="macts">
     <button class="mcancel" onclick="closeMo('editBuyerMo')">取消</button>
     <button class="msave" onclick="saveEditBuyer()">💾 儲存</button>
+  </div>
+</div></div>
+<div class="mo" id="editGroupMo"><div class="mbox">
+  <h3>✏️ 編輯團購</h3>
+  <input type="hidden" id="eg-id"/>
+  <div class="fg"><label>團購名稱 *</label><input id="eg-name" type="text"/></div>
+  <div class="fg"><label>團購課程編號</label>
+    <input class="num-inp" id="eg-nums" type="text" placeholder="例：80 30 33" oninput="previewNums('eg-nums','eg-preview')"/>
+    <div class="num-hint">用空格、頓號或逗號分隔</div>
+    <div class="parsed-nums" id="eg-preview"></div>
+  </div>
+  <div class="fg"><label>購買人</label>
+    <div id="eg-members"></div>
+    <button class="add-pur-btn" type="button" onclick="addEditGroupMember()">＋ 新增購買人</button>
+  </div>
+  <div class="macts">
+    <button class="mcancel" onclick="closeMo('editGroupMo')">取消</button>
+    <button class="msave" onclick="saveEditGroup()">💾 儲存</button>
   </div>
 </div></div>
 <div class="mo" id="addPurMo"><div class="mbox">
@@ -1322,12 +1338,7 @@ function updateBuyerPayment(sel) {
 window.updateBuyerPayment = updateBuyerPayment;
 
 function goEditGroup(btn) {
-  var gid=String(btn.dataset.gid);
-  goBTab('groups',document.querySelectorAll('.bstab')[1]);
-  setTimeout(function(){
-    var el=document.querySelector('.group-name-inp[data-gid="'+gid+'"]');
-    if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();}
-  },0);
+  openEditGroup(btn);
 }
 window.goEditGroup = goEditGroup;
 
@@ -1359,6 +1370,93 @@ function toggleGroupSent(cb) {
 }
 window.toggleGroupSent = toggleGroupSent;
 
+function addEditGroupMember(member) {
+  var box=document.getElementById('eg-members');
+  if(!box) return;
+  member=member||{};
+  var row=document.createElement('div');
+  row.className='nbuyer-row';
+  row.dataset.bid=member.id||'';
+  row.innerHTML='<input class="eg-member-name" type="text" placeholder="姓名／暱稱" value="'+esc(member.name||'')+'"/>'+
+    '<select class="eg-member-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>'+
+    '<button type="button" onclick="delEditGroupMember(this)">×</button>';
+  box.appendChild(row);
+  row.querySelector('.eg-member-status').value=member.status||'pre';
+}
+window.addEditGroupMember = addEditGroupMember;
+
+function delEditGroupMember(btn) {
+  btn.closest('.nbuyer-row').remove();
+}
+window.delEditGroupMember = delEditGroupMember;
+
+function openEditGroup(btn) {
+  var gid=String(btn.dataset.gid);
+  var g=findBuyerGroup(gid);
+  if(!g) return;
+  document.getElementById('eg-id').value=gid;
+  document.getElementById('eg-name').value=g.name||'';
+  document.getElementById('eg-nums').value=(g.nums||[]).join(' ');
+  previewNums('eg-nums','eg-preview');
+  document.getElementById('eg-members').innerHTML='';
+  groupMembers(gid).forEach(function(b){
+    addEditGroupMember({id:b.id,name:b.name,status:buyerPaymentStatus(b)});
+  });
+  if(!groupMembers(gid).length) addEditGroupMember();
+  openMo('editGroupMo');
+}
+window.openEditGroup = openEditGroup;
+
+function saveEditGroup() {
+  var gid=String(document.getElementById('eg-id').value);
+  var name=document.getElementById('eg-name').value.trim();
+  if(!name){toast('⚠️ 請輸入團購名稱');return;}
+  var nums=parseNums(document.getElementById('eg-nums').value);
+  var groups=lbg().slice();
+  var g=groups.find(function(x){return String(x.id)===gid;});
+  if(!g) return;
+  var oldNums=(g.nums||[]).slice();
+  g.name=name;
+  g.nums=nums;
+  g.sentNums=(g.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;});
+  sbg(groups);
+
+  var rows=Array.from(document.querySelectorAll('#eg-members .nbuyer-row')).map(function(row){
+    return {
+      id: row.dataset.bid?parseInt(row.dataset.bid):null,
+      name: (row.querySelector('.eg-member-name').value||'').trim(),
+      status: row.querySelector('.eg-member-status').value||'pre'
+    };
+  }).filter(function(x){return x.name;});
+  if(!rows.length){toast('⚠️ 至少保留一位購買人');return;}
+  var keepIds=rows.filter(function(r){return r.id;}).map(function(r){return r.id;});
+  var buyers=lb().slice().filter(function(b){return buyerGroupId(b)!==gid||keepIds.indexOf(b.id)>=0;});
+  var baseId=Date.now();
+  rows.forEach(function(r,idx){
+    var b=r.id?buyers.find(function(x){return x.id===r.id;}):null;
+    if(!b){
+      b={id:baseId+idx+1000,name:r.name,groupId:gid,purchases:[]};
+      buyers.unshift(b);
+    }
+    b.name=r.name;
+    b.groupId=gid;
+    var pur=firstBuyPurchase(b);
+    if(!pur){
+      pur={id:baseId+idx,status:r.status,nums:nums.slice(),note:'',sentNums:[],exchange:null};
+      b.purchases.push(pur);
+    } else {
+      pur.status=r.status;
+      if(arrSame(pur.nums||[],oldNums)) pur.nums=nums.slice();
+      else nums.forEach(function(n){if((pur.nums||[]).indexOf(n)<0){if(!pur.nums)pur.nums=[];pur.nums.push(n);}});
+      pur.sentNums=(pur.sentNums||[]).filter(function(n){return (pur.nums||[]).indexOf(n)>=0;});
+    }
+  });
+  sb(buyers);
+  closeMo('editGroupMo');
+  renderPending(); renderAllBuyers(); toast('✅ 團購已儲存');
+}
+window.saveEditGroup = saveEditGroup;
+
 function renderPendingGroupCard(g) {
   var st=buyerGroupStats(String(g.id));
   var nums=g.nums||[];
@@ -1376,7 +1474,7 @@ function renderPendingGroupCard(g) {
   } else {
     btn='<button class="send-btn ok" disabled>✅ 團購已發送</button>';
   }
-  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name)+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">團購</span></div></div>'+
+  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name)+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">團購</span></div><div class="buyer-btns"><button class="cbtn" data-gid="'+g.id+'" onclick="openEditGroup(this)">✏️</button><button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button></div></div>'+
     '<div class="group-meta" style="margin-bottom:7px;">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'</div>'+
     '<div class="pr-row">'+renderGroupCourseRows(nums,sentNums,g.id,true)+btn+'</div></div>';
 }
