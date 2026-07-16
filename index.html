@@ -29,6 +29,15 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .yt-row .lbl{width:90px;flex-shrink:0;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.78rem;background:#fff;color:var(--text);outline:none;}
 .yt-row .url{flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.78rem;background:#fff;color:var(--text);outline:none;min-width:0;}
 .yt-row .del{background:none;border:none;font-size:.88rem;cursor:pointer;color:var(--sub);padding:2px 4px;flex-shrink:0;}
+.sub-row{background:#f0f4f8;border:1px solid var(--border);border-radius:9px;padding:8px;margin-bottom:7px;}
+.sub-row .sub-top{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
+.sub-row input{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.78rem;background:#fff;color:var(--text);outline:none;}
+.sub-row .sub-title{flex:1;}
+.sub-row .sub-del{background:none;border:none;font-size:.88rem;cursor:pointer;color:var(--sub);padding:2px 4px;flex-shrink:0;}
+.sub-card{background:#f0f4f8;border:1px solid var(--border);border-radius:9px;padding:8px 9px;margin-top:7px;}
+.sub-card-title{font-size:.78rem;font-weight:800;color:var(--text);margin-bottom:5px;}
+.sub-actions{display:flex;gap:6px;margin-top:6px;}
+.sub-actions .bcopy{flex:1;padding:6px 8px;}
 .fbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;margin-bottom:8px;scrollbar-width:none;}
 .fbar::-webkit-scrollbar{display:none;}
 .ftag{padding:5px 11px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#eef2ff;color:var(--sub);white-space:nowrap;flex-shrink:0;}
@@ -109,6 +118,8 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .group-member-row select{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:.76rem;background:#fff;color:var(--text);outline:none;}
 .group-member-name{font-size:.78rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nbuyer-row{display:grid;grid-template-columns:1fr 130px 32px;gap:6px;align-items:center;margin-bottom:6px;}
+.nbuyer-row.no-pay{grid-template-columns:1fr 32px;}
+.nbuyer-row.no-pay .nbuyer-status{display:none;}
 .nbuyer-row input,.nbuyer-row select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;background:#fff;color:var(--text);outline:none;}
 .nbuyer-row button{height:32px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--sub);cursor:pointer;font-size:.86rem;}
 .buyer-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:9px;border:1px solid var(--border);}
@@ -140,9 +151,6 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .send-btn:disabled{opacity:.35;cursor:not-allowed;background:#e2e8f0;color:var(--sub);}
 .send-btn.ok{background:linear-gradient(135deg,var(--green),#2f855a);}
 .add-pur-btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:#eef2ff;color:var(--accent);border:1.5px dashed var(--accent);border-radius:8px;font-size:.74rem;cursor:pointer;font-weight:600;width:100%;margin-top:4px;}
-.show-done-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:8px;}
-.show-done-row label{font-size:.73rem;color:var(--sub);cursor:pointer;}
-.show-done-row input{accent-color:var(--accent);cursor:pointer;}
 .num-inp{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;background:#fff;color:var(--text);outline:none;font-family:monospace;}
 .num-hint{font-size:.7rem;color:var(--sub);margin-top:3px;}
 .parsed-nums{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
@@ -249,6 +257,9 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
         <button class="btn-yt" onclick="addYtRow('a-yt','','')">＋ 新增 YouTube 連結</button>
       </div>
       <div class="fg"><label>☁️ 載點（選填）</label><input id="a-cloud" type="url" placeholder="https://mega.nz/..."/></div>
+      <div class="fg"><label>📡 直播小課（選填）</label><div id="a-subs"></div>
+        <button class="btn-yt" onclick="addSubRow('a-subs',{})">＋ 新增直播小課</button>
+      </div>
       <div class="fg"><label>🏷️ 分類</label>
         <div class="row2"><select id="a-cat" style="flex:1"><option value="">— 選擇分類 —</option></select>
         <button class="btn-sm" onclick="openCatMgr()">管理</button></div>
@@ -282,15 +293,12 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
-      <div class="show-done-row">
-        <input type="checkbox" id="show-done" onchange="renderPending()"/>
-        <label for="show-done">顯示已完成</label>
-      </div>
       <div class="fbar bpay-filters" id="buyer-pay-filters">
         <button class="ftag on" onclick="setBuyerPayFilter('all',this)">全部</button>
         <button class="ftag" onclick="setBuyerPayFilter('paid',this)">✅ 已付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('pre',this)">⏳ 預約未付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('exchange',this)">🔄 交換</button>
+        <button class="ftag" onclick="setBuyerPayFilter('completed',this)">✅ 已完成</button>
       </div>
       <div id="pending-list"></div>
     </div>
@@ -318,7 +326,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
         <div class="fg"><label>購買人 *</label>
           <div id="nb-buyers"></div>
           <button class="add-pur-btn" type="button" onclick="addBuyerRow()">＋ 新增購買人</button>
-          <div class="num-hint">每位購買人可單獨設定已付款或預約未付款</div>
+          <div class="num-hint" id="nb-buyers-hint">每位購買人可單獨設定已付款或預約未付款</div>
         </div>
         <div class="fg"><label>購買方式</label>
           <select id="nb-mode" onchange="toggleBuyerMode()">
@@ -378,6 +386,9 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <button class="btn-yt" onclick="addYtRow('e-yt','','')">＋ 新增 YouTube 連結</button>
   </div>
   <div class="fg"><label>☁️ 載點</label><input id="e-cloud" type="url"/></div>
+  <div class="fg"><label>📡 直播小課</label><div id="e-subs"></div>
+    <button class="btn-yt" onclick="addSubRow('e-subs',{})">＋ 新增直播小課</button>
+  </div>
   <div class="fg"><label>🏷️ 分類</label><select id="e-cat"><option value="">— 無分類 —</option></select></div>
   <div class="fg"><label>📝 備註</label><textarea id="e-note"></textarea></div>
   <div class="macts">
@@ -587,7 +598,7 @@ function fbCopy(text,cb) {
   try{document.execCommand('copy');if(cb)cb();}catch(ex){toast('複製失敗');}
   document.body.removeChild(ta);
 }
-function hasLink(c) { var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[c.yt]:[]); return yt.length>0||!!c.cloud; }
+function hasLink(c) { var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[c.yt]:[]); return yt.length>0||!!c.cloud||(c.subs||[]).some(function(s){return !!(s.yt||s.cloud);}); }
 function getNum(c) { var m=(c.name||'').match(/^(\d+)/); return m?parseInt(m[1],10):99999; }
 function sortArr(arr) {
   var sel=document.getElementById('sort-sel');
@@ -610,7 +621,7 @@ function goTab(tab,btn) {
   document.getElementById('tc-'+tab).classList.add('on');
   if(btn) btn.classList.add('on');
   if(tab==='list') renderList();
-  if(tab==='add'){clearYt('a-yt');addYtRow('a-yt','','');}
+  if(tab==='add'){clearYt('a-yt');addYtRow('a-yt','','');clearSubs('a-subs');}
   if(tab==='buyers') renderPending();
   refreshSels();
 }
@@ -662,11 +673,47 @@ function getYtRows(cid) {
 }
 function clearYt(cid){document.getElementById(cid).innerHTML='';}
 
+function addSubRow(cid,sub) {
+  var c=document.getElementById(cid);
+  if(!c) return;
+  sub=sub||{};
+  var d=document.createElement('div'); d.className='sub-row';
+  d.innerHTML='<div class="sub-top"><input class="sub-title" type="text" placeholder="直播小課名稱" value="'+esc(sub.title||'')+'"><button class="sub-del" onclick="this.parentElement.parentElement.remove()">✕</button></div>'+
+    '<input class="sub-yt" type="url" placeholder="YouTube 連結" value="'+esc(sub.yt||'')+'" style="margin-bottom:5px;">'+
+    '<input class="sub-cloud" type="url" placeholder="雲端／載點連結" value="'+esc(sub.cloud||'')+'">';
+  c.appendChild(d);
+}
+window.addSubRow = addSubRow;
+
+function getSubRows(cid) {
+  var rows=[];
+  document.getElementById(cid).querySelectorAll('.sub-row').forEach(function(d){
+    var title=d.querySelector('.sub-title').value.trim();
+    var yt=d.querySelector('.sub-yt').value.trim();
+    var cloud=d.querySelector('.sub-cloud').value.trim();
+    if(title||yt||cloud) rows.push({title:title,yt:yt,cloud:cloud});
+  });
+  return rows;
+}
+function clearSubs(cid){document.getElementById(cid).innerHTML='';}
+
 function ctext(c) {
   var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[{label:'YT',url:c.yt}]:[]);
   var t=c.name+'\n';
   yt.forEach(function(l){t+=(l.label||'YT')+'：'+l.url+'\n';});
   if(c.cloud) t+='載點：'+c.cloud+'\n';
+  (c.subs||[]).forEach(function(s){
+    t+='\n'+(s.title||'直播小課')+'\n';
+    if(s.yt) t+='YT：'+s.yt+'\n';
+    if(s.cloud) t+='載點：'+s.cloud+'\n';
+  });
+  return t.trim();
+}
+
+function subText(s) {
+  var t=(s.title||'直播小課')+'\n';
+  if(s.yt) t+='YT：'+s.yt+'\n';
+  if(s.cloud) t+='載點：'+s.cloud+'\n';
   return t.trim();
 }
 
@@ -720,16 +767,24 @@ function renderCard(c) {
     return '<div class="lr"><span class="badge byt">'+esc(l.label||'YT')+'</span><span class="ltext"><a href="'+esc(l.url)+'" target="_blank">'+esc(l.url)+'</a></span><button class="bcopy" data-url="'+esc(l.url)+'" onclick="cpBtn(this)">複製</button></div>';
   }).join('');
   var clH=c.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(c.cloud)+'" target="_blank">'+esc(c.cloud)+'</a></span><button class="bcopy" data-url="'+esc(c.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
+  var subH=(c.subs||[]).map(function(s,idx){
+    var ytRow=s.yt?'<div class="lr"><span class="badge byt">YT</span><span class="ltext"><a href="'+esc(s.yt)+'" target="_blank">'+esc(s.yt)+'</a></span><button class="bcopy" data-url="'+esc(s.yt)+'" onclick="cpBtn(this)">複製</button></div>':'';
+    var clRow=s.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(s.cloud)+'" target="_blank">'+esc(s.cloud)+'</a></span><button class="bcopy" data-url="'+esc(s.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
+    var allBtn=(s.yt||s.cloud)?'<div class="sub-actions"><button class="bcopy" data-id="'+c.id+'" data-idx="'+idx+'" onclick="cpSub(this)">📋 複製此堂直播</button></div>':'';
+    return '<div class="sub-card"><div class="sub-card-title">📡 '+esc(s.title||('直播小課 '+(idx+1)))+'</div>'+ytRow+clRow+allBtn+'</div>';
+  }).join('');
   var ntH=c.note?'<div class="lr"><span class="badge bnt">備註</span><span class="ltext" style="white-space:normal">'+esc(c.note)+'</span></div>':'';
   var nlB=nl?'<div class="badge bnl">⚠️ 尚無連結</div>':'';
   var cpB=nl?'<button class="bca" disabled>📋 複製全部連結</button>':'<button class="bca" data-id="'+c.id+'" onclick="cpCard(this)">📋 複製全部連結</button>';
-  return '<div class="cc'+(nl?' nl':'')+'"><div class="ctop"><div class="ctitle">'+esc(c.name)+'</div><div class="cbtns"><button class="cbtn" data-id="'+c.id+'" onclick="openEdit(this)">✏️</button><button class="cbtn" data-id="'+c.id+'" onclick="delC(this)">🗑️</button></div></div>'+nlB+ytH+clH+ntH+cpB+'</div>';
+  return '<div class="cc'+(nl?' nl':'')+'"><div class="ctop"><div class="ctitle">'+esc(c.name)+'</div><div class="cbtns"><button class="cbtn" data-id="'+c.id+'" onclick="openEdit(this)">✏️</button><button class="cbtn" data-id="'+c.id+'" onclick="delC(this)">🗑️</button></div></div>'+nlB+ytH+clH+subH+ntH+cpB+'</div>';
 }
 
 function cpBtn(btn){var url=btn.dataset.url;clip(url,function(){btn.textContent='✓';btn.classList.add('ok');setTimeout(function(){btn.textContent='複製';btn.classList.remove('ok');},1600);toast('📋 已複製！');});}
 window.cpBtn = cpBtn;
 function cpCard(btn){var id=parseFloat(btn.dataset.id);var c=lc().find(function(z){return z.id===id;});if(!c)return;clip(ctext(c),function(){btn.textContent='✓ 已複製！';setTimeout(function(){btn.textContent='📋 複製全部連結';},2000);toast('✅ 已複製！');});}
 window.cpCard = cpCard;
+function cpSub(btn){var id=parseFloat(btn.dataset.id);var idx=parseInt(btn.dataset.idx);var c=lc().find(function(z){return z.id===id;});if(!c||!c.subs||!c.subs[idx])return;clip(subText(c.subs[idx]),function(){btn.textContent='✓ 已複製！';setTimeout(function(){btn.textContent='📋 複製此堂直播';},1800);toast('✅ 已複製直播連結！');});}
+window.cpSub = cpSub;
 
 function parseNums(raw) {
   return raw.split(/[、，,\s\/\\\n\r\t]+/).map(function(s){return s.trim();})
@@ -801,14 +856,16 @@ function addCourse() {
   if(!name){toast('⚠️ 請輸入課程名稱');return;}
   var yt=getYtRows('a-yt');
   var cloud=document.getElementById('a-cloud').value.trim();
+  var subs=getSubRows('a-subs');
   var cat=document.getElementById('a-cat').value.trim();
   var note=document.getElementById('a-note').value.trim();
   var data=lc().slice();
-  data.unshift({id:Date.now(),name:name,ytLinks:yt,cloud:cloud,cat:cat,note:note});
+  data.unshift({id:Date.now(),name:name,ytLinks:yt,cloud:cloud,subs:subs,cat:cat,note:note});
   sc(data);
   ['a-name','a-cloud','a-note'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('a-cat').value='';
   clearYt('a-yt'); addYtRow('a-yt','','');
+  clearSubs('a-subs');
   toast('✅ 課程已新增！');
   goTab('list',document.querySelectorAll('.tb')[0]);
 }
@@ -825,6 +882,8 @@ function openEdit(btn) {
   clearYt('e-yt');
   var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[{label:'YT',url:c.yt}]:[]);
   if(yt.length) yt.forEach(function(l){addYtRow('e-yt',l.label,l.url);}); else addYtRow('e-yt','','');
+  clearSubs('e-subs');
+  (c.subs||[]).forEach(function(s){addSubRow('e-subs',s);});
   openMo('editMo');
 }
 window.openEdit = openEdit;
@@ -835,10 +894,11 @@ function saveEdit() {
   if(!name){toast('⚠️ 請輸入課程名稱');return;}
   var yt=getYtRows('e-yt');
   var cloud=document.getElementById('e-cloud').value.trim();
+  var subs=getSubRows('e-subs');
   var cat=document.getElementById('e-cat').value.trim();
   var note=document.getElementById('e-note').value.trim();
   var data=lc().slice(); var i=data.findIndex(function(z){return z.id===id;}); if(i===-1) return;
-  data[i]=Object.assign({},data[i],{name:name,ytLinks:yt,cloud:cloud,cat:cat,note:note});
+  data[i]=Object.assign({},data[i],{name:name,ytLinks:yt,cloud:cloud,subs:subs,cat:cat,note:note});
   sc(data); closeMo('editMo'); renderList(); toast('✅ 已儲存！');
 }
 window.saveEdit = saveEdit;
@@ -963,8 +1023,20 @@ function addBuyerRow(name,status) {
   box.appendChild(row);
   var defaultStatus=document.getElementById('nb-status')?document.getElementById('nb-status').value:'paid';
   row.querySelector('.nbuyer-status').value=status||defaultStatus||'paid';
+  syncBuyerRowsForType();
 }
 window.addBuyerRow = addBuyerRow;
+
+function syncBuyerRowsForType() {
+  var typeEl=document.getElementById('nb-type');
+  var isBuy=!typeEl||typeEl.value==='buy';
+  document.querySelectorAll('#nb-buyers .nbuyer-row').forEach(function(row){
+    row.classList.toggle('no-pay',!isBuy);
+  });
+  var hint=document.getElementById('nb-buyers-hint');
+  if(hint) hint.textContent=isBuy?'每位購買人可單獨設定已付款或預約未付款':'交換／贈送不需要付款狀態';
+}
+window.syncBuyerRowsForType = syncBuyerRowsForType;
 
 function delBuyerRow(btn) {
   var rows=document.querySelectorAll('#nb-buyers .nbuyer-row');
@@ -1187,6 +1259,7 @@ function groupNeedsPending(g) {
 
 function groupMatchesPaymentFilter(g) {
   if(buyerPayFilter==='all') return true;
+  if(buyerPayFilter==='completed') return true;
   if(buyerPayFilter==='exchange') return false;
   var buyers=lb().filter(function(b){return buyerGroupId(b)===String(g.id);});
   return buyers.some(function(b){return buyerHasPaymentStatus(b,buyerPayFilter);});
@@ -1566,26 +1639,29 @@ function toggleHistory(btn) {
 window.toggleHistory = toggleHistory;
 
 function renderPending() {
-  var showDone=document.getElementById('show-done').checked;
   var buyers=lb();
   var el=document.getElementById('pending-list');
   if(!buyers.length&&!lbg().length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
   var html='';
   lbg().forEach(function(g){
     var needs=groupNeedsPending(g);
-    if(!needs&&!showDone) return;
+    if(buyerPayFilter==='completed'){
+      if(needs) return;
+    } else if(!needs) return;
     if(!groupMatchesPaymentFilter(g)) return;
     html+=renderPendingGroupCard(g);
   });
   buyers.forEach(function(buyer){
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
-    if(!needs&&!showDone) return;
+    if(buyerPayFilter==='completed'){
+      if(needs) return;
+    } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
-    if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
+    if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
     html+=renderBuyerCard(buyer);
   });
-  el.innerHTML=html||'<div class="empty">✅ 全部已發送完畢</div>';
+  el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
 
 function renderGroupMembers(gid) {
@@ -1925,6 +2001,7 @@ function toggleExBox(prefix) {
     if(paymentWrap) paymentWrap.style.display = 'none';
     if(courseIdWrap) courseIdWrap.style.display = 'none';
   }
+  if(prefix==='nb') syncBuyerRowsForType();
 }
 window.toggleExBox = toggleExBox;
 window.lc = lc;
