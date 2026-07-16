@@ -34,12 +34,16 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .sub-row input{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.78rem;background:#fff;color:var(--text);outline:none;}
 .sub-row .sub-title{flex:1;}
 .sub-row .sub-del{background:none;border:none;font-size:.88rem;cursor:pointer;color:var(--sub);padding:2px 4px;flex-shrink:0;}
-.sub-card{background:#f0f4f8;border:1px solid var(--border);border-radius:9px;padding:8px 9px;margin-top:7px;}
-.sub-card-title{font-size:.78rem;font-weight:800;color:var(--text);margin-bottom:5px;}
+.sub-card{background:#f0f4f8;border:1px solid var(--border);border-radius:9px;margin-top:7px;overflow:hidden;}
+.sub-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:none;padding:8px 9px;font-size:.78rem;font-weight:800;color:var(--text);text-align:left;cursor:pointer;}
+.sub-card-title span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sub-card-arrow{font-size:.7rem;color:var(--sub);flex-shrink:0;transition:transform .2s;}
+.sub-card-title.open .sub-card-arrow{transform:rotate(180deg);}
+.sub-card-body{padding:0 9px 8px;}
+.sub-card-body.collapsed{display:none;}
 .sub-actions{display:flex;gap:6px;margin-top:6px;}
 .sub-actions .bcopy{flex:1;padding:6px 8px;}
-.sub-toggle{display:flex;align-items:center;justify-content:center;width:100%;padding:7px;background:#eef2ff;color:var(--accent);border:1.5px dashed var(--accent);border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;margin-top:7px;}
-.sub-list.collapsed{display:none;}
+.sub-list{margin-top:7px;}
 .fbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;margin-bottom:8px;scrollbar-width:none;}
 .fbar::-webkit-scrollbar{display:none;}
 .ftag{padding:5px 11px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#eef2ff;color:var(--sub);white-space:nowrap;flex-shrink:0;}
@@ -741,11 +745,10 @@ function subText(s) {
 }
 
 function toggleCourseSubs(btn) {
-  var list=btn.nextElementSibling;
-  if(!list) return;
-  var collapsed=list.classList.toggle('collapsed');
-  var count=btn.dataset.count||'0';
-  btn.textContent=collapsed?'📡 展開直播小課（'+count+'）':'📡 收起直播小課';
+  var body=btn.nextElementSibling;
+  if(!body) return;
+  var collapsed=body.classList.toggle('collapsed');
+  btn.classList.toggle('open',!collapsed);
 }
 window.toggleCourseSubs = toggleCourseSubs;
 
@@ -804,9 +807,9 @@ function renderCard(c) {
     var ytRow=s.yt?'<div class="lr"><span class="badge byt">YT</span><span class="ltext"><a href="'+esc(s.yt)+'" target="_blank">'+esc(s.yt)+'</a></span><button class="bcopy" data-url="'+esc(s.yt)+'" onclick="cpBtn(this)">複製</button></div>':'';
     var clRow=s.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(s.cloud)+'" target="_blank">'+esc(s.cloud)+'</a></span><button class="bcopy" data-url="'+esc(s.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
     var allBtn=(s.yt||s.cloud)?'<div class="sub-actions"><button class="bcopy" data-id="'+c.id+'" data-idx="'+idx+'" onclick="cpSub(this)">📋 複製此堂直播</button></div>':'';
-    return '<div class="sub-card"><div class="sub-card-title">📡 '+esc(s.title||('直播小課 '+(idx+1)))+'</div>'+ytRow+clRow+allBtn+'</div>';
+    return '<div class="sub-card"><button class="sub-card-title" onclick="toggleCourseSubs(this)"><span>📡 '+esc(s.title||('直播小課 '+(idx+1)))+'</span><span class="sub-card-arrow">▼</span></button><div class="sub-card-body collapsed">'+ytRow+clRow+allBtn+'</div></div>';
   }).join('');
-  var subH=subItems?'<button class="sub-toggle" data-count="'+subs.length+'" onclick="toggleCourseSubs(this)">📡 展開直播小課（'+subs.length+'）</button><div class="sub-list collapsed">'+subItems+'</div>':'';
+  var subH=subItems?'<div class="sub-list">'+subItems+'</div>':'';
   var ntH=c.note?'<div class="lr"><span class="badge bnt">備註</span><span class="ltext" style="white-space:normal">'+esc(c.note)+'</span></div>':'';
   var nlB=nl?'<div class="badge bnl">⚠️ 尚無連結</div>':'';
   var cpB=nl?'<button class="bca" disabled>📋 複製全部連結</button>':'<button class="bca" data-id="'+c.id+'" onclick="cpCard(this)">📋 複製全部連結</button>';
