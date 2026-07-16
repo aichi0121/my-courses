@@ -121,6 +121,9 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .pr-row{background:#f0f4f8;border-radius:8px;padding:7px 9px;margin-bottom:5px;border:1px solid var(--border);}
 .pr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
 .pr-label{font-size:.72rem;font-weight:700;color:var(--sub);}
+.hist-summary{background:#f0f4f8;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:7px;font-size:.75rem;color:var(--sub);line-height:1.6;}
+.hist-toggle{display:flex;align-items:center;justify-content:center;width:100%;padding:7px;background:#eef2ff;color:var(--accent);border:1.5px dashed var(--accent);border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;margin-bottom:7px;}
+.hist-body.collapsed{display:none;}
 .pr-st{font-size:.66rem;padding:2px 6px;border-radius:20px;font-weight:700;}
 .pr-done{background:#d1fae5;color:#059669;}
 .pr-pend{background:#fef3c7;color:#d97706;}
@@ -1534,6 +1537,34 @@ function buyerNeedsPending(buyer) {
   return result;
 }
 
+function buyerHistorySummary(buyer) {
+  var purchases=buyer.purchases||[];
+  var nums=[];
+  var exchangeCount=0;
+  purchases.forEach(function(pur){
+    if(pur.exchange) exchangeCount++;
+    (pur.nums||[]).forEach(function(n){if(nums.indexOf(n)<0) nums.push(n);});
+  });
+  var names=nums.map(function(n){
+    var c=findByNum(n);
+    return c?'#'+n+' '+c.name:'#'+n;
+  });
+  return {
+    purchaseCount:purchases.length,
+    courseCount:nums.length,
+    exchangeCount:exchangeCount,
+    names:names
+  };
+}
+
+function toggleHistory(btn) {
+  var body=btn.parentNode.querySelector('.hist-body');
+  if(!body) return;
+  var closed=body.classList.toggle('collapsed');
+  btn.textContent=closed?'查看購買紀錄':'收起購買紀錄';
+}
+window.toggleHistory = toggleHistory;
+
 function renderPending() {
   var showDone=document.getElementById('show-done').checked;
   var buyers=lb();
@@ -1715,7 +1746,19 @@ if(pur.exchange){
 pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
-  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">👤 '+esc(buyer.name)+stLabel+'</div><div class="buyer-btns"><button class="cbtn" data-bid="'+buyer.id+'" onclick="openEditBuyer(this)">✏️</button><button class="cbtn" data-bid="'+buyer.id+'" onclick="delBuyer(this)">🗑️</button></div></div>'+pHtml+addPurBtn+'</div>';
+  var needs=buyerNeedsPending(buyer);
+  var summary=buyerHistorySummary(buyer);
+  var summaryHtml='';
+  var bodyClass='';
+  var toggleHtml='';
+  if(!needs && (summary.purchaseCount>1 || summary.courseCount>1 || summary.exchangeCount>0)){
+    var shown=summary.names.slice(0,3).map(esc).join('、');
+    var more=summary.names.length>3?' 等 '+summary.names.length+' 堂':'';
+    summaryHtml='<div class="hist-summary">共購買 '+summary.purchaseCount+' 次｜'+summary.courseCount+' 堂課'+(summary.exchangeCount?'｜交換 '+summary.exchangeCount+' 次':'')+(shown?'<br>'+shown+more:'')+'</div>';
+    bodyClass=' collapsed';
+    toggleHtml='<button class="hist-toggle" onclick="toggleHistory(this)">查看購買紀錄</button>';
+  }
+  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">👤 '+esc(buyer.name)+stLabel+'</div><div class="buyer-btns"><button class="cbtn" data-bid="'+buyer.id+'" onclick="openEditBuyer(this)">✏️</button><button class="cbtn" data-bid="'+buyer.id+'" onclick="delBuyer(this)">🗑️</button></div></div>'+summaryHtml+toggleHtml+'<div class="hist-body'+bodyClass+'">'+pHtml+'</div>'+addPurBtn+'</div>';
 }
 
 function toggleSent(cb) {
