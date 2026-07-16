@@ -349,7 +349,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   </select>
 </div>
 </div>
-<div class="fg" id="nb-payment-wrap"><label>付款狀態</label>
+<div class="fg" id="nb-payment-wrap" style="display:none"><label>付款狀態</label>
           <select id="nb-status" onchange="syncEmptyBuyerRowsStatus()"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
         </div>
         <div class="fg" id="nb-courseid-wrap"><label>購買課程編號</label>
@@ -938,7 +938,8 @@ function addBuyerRow(name,status) {
     '<select class="nbuyer-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>'+
     '<button type="button" onclick="delBuyerRow(this)">×</button>';
   box.appendChild(row);
-  row.querySelector('.nbuyer-status').value=status||document.getElementById('nb-status').value||'paid';
+  var defaultStatus=document.getElementById('nb-status')?document.getElementById('nb-status').value:'paid';
+  row.querySelector('.nbuyer-status').value=status||defaultStatus||'paid';
 }
 window.addBuyerRow = addBuyerRow;
 
@@ -962,7 +963,7 @@ function getNewBuyerEntries() {
 function resetBuyerRows() {
   var box=document.getElementById('nb-buyers');
   if(box) box.innerHTML='';
-  addBuyerRow('',document.getElementById('nb-status').value||'paid');
+  addBuyerRow('',(document.getElementById('nb-status')&&document.getElementById('nb-status').value)||'paid');
 }
 
 function syncEmptyBuyerRowsStatus() {
@@ -1141,6 +1142,20 @@ function buyerGroupStats(groupId) {
   return {buyers:buyers.length,paid:paid,pre:pre,pending:pending};
 }
 
+function groupNeedsPending(g) {
+  var nums=g.nums||[];
+  if(!nums.length) return false;
+  var sentNums=g.sentNums||[];
+  return nums.some(function(n){return sentNums.indexOf(n)<0;});
+}
+
+function groupMatchesPaymentFilter(g) {
+  if(buyerPayFilter==='all') return true;
+  if(buyerPayFilter==='exchange') return false;
+  var buyers=lb().filter(function(b){return buyerGroupId(b)===String(g.id);});
+  return buyers.some(function(b){return buyerHasPaymentStatus(b,buyerPayFilter);});
+}
+
 function renderGroupCourseRows(nums, sentNums) {
   nums=nums||[]; sentNums=sentNums||[];
   if(!nums.length) return '<div class="qempty" style="padding:10px 0;">尚未設定團購課程</div>';
@@ -1169,7 +1184,8 @@ function renderBuyerGroups() {
   var el=document.getElementById('buyer-group-list');
   if(!el) return;
   refreshBuyerGroupSels();
-  var groups=[{id:'',name:'單買',fixed:true}].concat(lbg());
+  var groups=lbg();
+  if(!groups.length){el.innerHTML='<div class="empty">尚無團購</div>';return;}
   el.innerHTML=groups.map(function(g){
     var st=buyerGroupStats(String(g.id));
     var del=g.fixed?'':'<button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button>';
@@ -1265,6 +1281,28 @@ function copyBuyerGroupLinks(btn) {
 }
 window.copyBuyerGroupLinks = copyBuyerGroupLinks;
 
+function renderPendingGroupCard(g) {
+  var st=buyerGroupStats(String(g.id));
+  var nums=g.nums||[];
+  var sentNums=g.sentNums||[];
+  var pendingWithLink=nums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
+  var pendingNoLink=nums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&sentNums.indexOf(n)<0;});
+  var btn='';
+  if(st.pre>0&&pendingWithLink.length>0){
+    btn='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 尚有 '+st.pre+' 位預約未付款</button>';
+  } else if(pendingWithLink.length>0){
+    var hint=pendingNoLink.length>0?' (另有 '+pendingNoLink.length+' 堂未開課)':'';
+    btn='<button class="send-btn" data-gid="'+g.id+'" onclick="copyBuyerGroupLinks(this)">📋 複製團購連結（'+pendingWithLink.length+' 堂）'+hint+'</button>';
+  } else if(pendingNoLink.length>0){
+    btn='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+pendingNoLink.length+' 堂開課中</button>';
+  } else {
+    btn='<button class="send-btn ok" disabled>✅ 團購已發送</button>';
+  }
+  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name)+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">團購</span></div></div>'+
+    '<div class="group-meta" style="margin-bottom:7px;">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'</div>'+
+    '<div class="pr-row">'+renderGroupCourseRows(nums,sentNums)+btn+'</div></div>';
+}
+
 function delBuyerGroup(btn) {
   var gid=String(btn.dataset.gid);
   var count=lb().filter(function(b){return buyerGroupId(b)===gid;}).length;
@@ -1324,9 +1362,16 @@ function renderPending() {
   var showDone=document.getElementById('show-done').checked;
   var buyers=lb();
   var el=document.getElementById('pending-list');
-  if(!buyers.length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
+  if(!buyers.length&&!lbg().length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
   var html='';
+  lbg().forEach(function(g){
+    var needs=groupNeedsPending(g);
+    if(!needs&&!showDone) return;
+    if(!groupMatchesPaymentFilter(g)) return;
+    html+=renderPendingGroupCard(g);
+  });
   buyers.forEach(function(buyer){
+    if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
     if(!needs&&!showDone) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
@@ -1619,7 +1664,7 @@ function toggleExBox(prefix) {
 
   if(type === 'buy') {
     box.style.display = 'none';
-    if(paymentWrap) paymentWrap.style.display = 'block';
+    if(paymentWrap) paymentWrap.style.display = prefix==='nb'?'none':'block';
     if(courseIdWrap) courseIdWrap.style.display = 'block';
   } else if(type === 'exchange') {
     box.style.display = 'block';
