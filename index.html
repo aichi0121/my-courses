@@ -34,6 +34,10 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .sub-row input{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.78rem;background:#fff;color:var(--text);outline:none;}
 .sub-row .sub-title{flex:1;}
 .sub-row .sub-del{background:none;border:none;font-size:.88rem;cursor:pointer;color:var(--sub);padding:2px 4px;flex-shrink:0;}
+.sub-yt-row{display:flex;gap:5px;margin-bottom:5px;align-items:center;}
+.sub-yt-row .sub-yt-lbl{width:90px;flex-shrink:0;}
+.sub-yt-row .sub-yt-url{flex:1;min-width:0;}
+.sub-yt-row .sub-yt-del{width:auto;background:none;border:none;font-size:.88rem;cursor:pointer;color:var(--sub);padding:2px 4px;flex-shrink:0;}
 .sub-card{background:#f0f4f8;border:1px solid var(--border);border-radius:9px;margin-top:7px;overflow:hidden;}
 .sub-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:none;padding:8px 9px;font-size:.78rem;font-weight:800;color:var(--text);text-align:left;cursor:pointer;}
 .sub-card-title span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -606,7 +610,8 @@ function fbCopy(text,cb) {
   try{document.execCommand('copy');if(cb)cb();}catch(ex){toast('複製失敗');}
   document.body.removeChild(ta);
 }
-function hasLink(c) { var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[c.yt]:[]); return yt.length>0||!!c.cloud||(c.subs||[]).some(function(s){return !!(s.yt||s.cloud);}); }
+function subYtLinks(s) { return s&&s.ytLinks&&s.ytLinks.length?s.ytLinks:(s&&s.yt?[{label:'YT',url:s.yt}]:[]); }
+function hasLink(c) { var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[c.yt]:[]); return yt.length>0||!!c.cloud||(c.subs||[]).some(function(s){return subYtLinks(s).length>0||!!s.cloud;}); }
 function getNum(c) { var m=(c.name||'').match(/^(\d+)/); return m?parseInt(m[1],10):99999; }
 function sortArr(arr) {
   var sel=document.getElementById('sort-sel');
@@ -685,15 +690,41 @@ function getYtRows(cid) {
 }
 function clearYt(cid){document.getElementById(cid).innerHTML='';}
 
+function addSubYtRow(target,lbl,url) {
+  var c=typeof target==='string'?document.getElementById(target):target;
+  if(!c) return;
+  var d=document.createElement('div'); d.className='sub-yt-row';
+  d.innerHTML='<input class="sub-yt-lbl" type="text" placeholder="標籤" value="'+esc(lbl||'')+'"><input class="sub-yt-url" type="url" placeholder="https://youtube.com/..." value="'+esc(url||'')+'"><button class="sub-yt-del" onclick="this.parentElement.remove()">✕</button>';
+  c.appendChild(d);
+}
+window.addSubYtRow = addSubYtRow;
+
+function addSubYtFromBtn(btn) {
+  addSubYtRow(btn.previousElementSibling,'','');
+}
+window.addSubYtFromBtn = addSubYtFromBtn;
+
+function getSubYtRows(row) {
+  var rows=[];
+  row.querySelectorAll('.sub-yt-row').forEach(function(d){
+    var l=d.querySelector('.sub-yt-lbl').value.trim();
+    var u=d.querySelector('.sub-yt-url').value.trim();
+    if(u) rows.push({label:l,url:u});
+  });
+  return rows;
+}
+
 function addSubRow(cid,sub) {
   var c=document.getElementById(cid);
   if(!c) return;
   sub=sub||{};
   var d=document.createElement('div'); d.className='sub-row';
   d.innerHTML='<div class="sub-top"><input class="sub-title" type="text" placeholder="直播小課名稱" value="'+esc(sub.title||'')+'"><button class="sub-del" onclick="this.parentElement.parentElement.remove()">✕</button></div>'+
-    '<input class="sub-yt" type="url" placeholder="YouTube 連結" value="'+esc(sub.yt||'')+'" style="margin-bottom:5px;">'+
+    '<div class="sub-yt-list"></div><button class="btn-yt" type="button" onclick="addSubYtFromBtn(this)" style="margin-bottom:5px;">＋ 新增 YouTube 連結</button>'+
     '<input class="sub-cloud" type="url" placeholder="雲端／載點連結" value="'+esc(sub.cloud||'')+'">';
   c.appendChild(d);
+  var yt=subYtLinks(sub);
+  if(yt.length) yt.forEach(function(l){addSubYtRow(d.querySelector('.sub-yt-list'),l.label,l.url);}); else addSubYtRow(d.querySelector('.sub-yt-list'),'','');
 }
 window.addSubRow = addSubRow;
 
@@ -701,9 +732,9 @@ function getSubRows(cid) {
   var rows=[];
   document.getElementById(cid).querySelectorAll('.sub-row').forEach(function(d){
     var title=d.querySelector('.sub-title').value.trim();
-    var yt=d.querySelector('.sub-yt').value.trim();
+    var ytLinks=getSubYtRows(d);
     var cloud=d.querySelector('.sub-cloud').value.trim();
-    if(title||yt||cloud) rows.push({title:title,yt:yt,cloud:cloud});
+    if(title||ytLinks.length||cloud) rows.push({title:title,ytLinks:ytLinks,cloud:cloud});
   });
   return rows;
 }
@@ -731,7 +762,7 @@ function ctext(c) {
   if(c.cloud) t+='載點：'+c.cloud+'\n';
   (c.subs||[]).forEach(function(s){
     t+='\n'+(s.title||'直播小課')+'\n';
-    if(s.yt) t+='YT：'+s.yt+'\n';
+    subYtLinks(s).forEach(function(l){t+=(l.label||'YT')+'：'+l.url+'\n';});
     if(s.cloud) t+='載點：'+s.cloud+'\n';
   });
   return t.trim();
@@ -739,7 +770,7 @@ function ctext(c) {
 
 function subText(s) {
   var t=(s.title||'直播小課')+'\n';
-  if(s.yt) t+='YT：'+s.yt+'\n';
+  subYtLinks(s).forEach(function(l){t+=(l.label||'YT')+'：'+l.url+'\n';});
   if(s.cloud) t+='載點：'+s.cloud+'\n';
   return t.trim();
 }
@@ -804,9 +835,11 @@ function renderCard(c) {
   var clH=c.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(c.cloud)+'" target="_blank">'+esc(c.cloud)+'</a></span><button class="bcopy" data-url="'+esc(c.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
   var subs=c.subs||[];
   var subItems=subs.map(function(s,idx){
-    var ytRow=s.yt?'<div class="lr"><span class="badge byt">YT</span><span class="ltext"><a href="'+esc(s.yt)+'" target="_blank">'+esc(s.yt)+'</a></span><button class="bcopy" data-url="'+esc(s.yt)+'" onclick="cpBtn(this)">複製</button></div>':'';
+    var ytRow=subYtLinks(s).map(function(l){
+      return '<div class="lr"><span class="badge byt">'+esc(l.label||'YT')+'</span><span class="ltext"><a href="'+esc(l.url)+'" target="_blank">'+esc(l.url)+'</a></span><button class="bcopy" data-url="'+esc(l.url)+'" onclick="cpBtn(this)">複製</button></div>';
+    }).join('');
     var clRow=s.cloud?'<div class="lr"><span class="badge bcl">載點</span><span class="ltext"><a href="'+esc(s.cloud)+'" target="_blank">'+esc(s.cloud)+'</a></span><button class="bcopy" data-url="'+esc(s.cloud)+'" onclick="cpBtn(this)">複製</button></div>':'';
-    var allBtn=(s.yt||s.cloud)?'<div class="sub-actions"><button class="bcopy" data-id="'+c.id+'" data-idx="'+idx+'" onclick="cpSub(this)">📋 複製此堂直播</button></div>':'';
+    var allBtn=(subYtLinks(s).length||s.cloud)?'<div class="sub-actions"><button class="bcopy" data-id="'+c.id+'" data-idx="'+idx+'" onclick="cpSub(this)">📋 複製此堂直播</button></div>':'';
     return '<div class="sub-card"><button class="sub-card-title" onclick="toggleCourseSubs(this)"><span>📡 '+esc(s.title||('直播小課 '+(idx+1)))+'</span><span class="sub-card-arrow">▼</span></button><div class="sub-card-body collapsed">'+ytRow+clRow+allBtn+'</div></div>';
   }).join('');
   var subH=subItems?'<div class="sub-list">'+subItems+'</div>':'';
