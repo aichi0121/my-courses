@@ -104,6 +104,9 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .group-course-box{margin-top:9px;background:#f0f4f8;border:1px solid var(--border);border-radius:9px;padding:9px;}
 .group-course-actions{display:flex;gap:7px;margin-top:7px;}
 .group-course-actions .btn-sm{flex:1;}
+.nbuyer-row{display:grid;grid-template-columns:1fr 130px 32px;gap:6px;align-items:center;margin-bottom:6px;}
+.nbuyer-row input,.nbuyer-row select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;background:#fff;color:var(--text);outline:none;}
+.nbuyer-row button{height:32px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--sub);cursor:pointer;font-size:.86rem;}
 .buyer-card{background:#fff;border-radius:11px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:9px;border:1px solid var(--border);}
 .buyer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
 .buyer-name{font-size:.93rem;font-weight:700;color:var(--text);}
@@ -282,6 +285,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
         <button class="ftag on" onclick="setBuyerPayFilter('all',this)">全部</button>
         <button class="ftag" onclick="setBuyerPayFilter('paid',this)">✅ 已付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('pre',this)">⏳ 預約未付款</button>
+        <button class="ftag" onclick="setBuyerPayFilter('exchange',this)">🔄 交換</button>
       </div>
       <div id="pending-list"></div>
     </div>
@@ -306,8 +310,10 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <div id="btc-new" style="display:none">
       <div class="card">
         <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增購買人</h2>
-        <div class="fg"><label>姓名／暱稱 *（可一次多位）</label><textarea id="nb-name" placeholder="例：Kuang&#10;小美&#10;Abby"></textarea>
-          <div class="num-hint">每行一位，也可用逗號、頓號或斜線分隔</div>
+        <div class="fg"><label>購買人 *</label>
+          <div id="nb-buyers"></div>
+          <button class="add-pur-btn" type="button" onclick="addBuyerRow()">＋ 新增購買人</button>
+          <div class="num-hint">每位購買人可單獨設定已付款或預約未付款</div>
         </div>
         <div class="fg"><label>購買方式</label>
           <select id="nb-mode" onchange="toggleBuyerMode()">
@@ -344,7 +350,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 </div>
 </div>
 <div class="fg" id="nb-payment-wrap"><label>付款狀態</label>
-          <select id="nb-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
+          <select id="nb-status" onchange="syncEmptyBuyerRowsStatus()"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
         </div>
         <div class="fg" id="nb-courseid-wrap"><label>購買課程編號</label>
           <input class="num-inp" id="nb-nums" type="text" placeholder="例：80 30 33 36 120" oninput="previewNums('nb-nums','nb-preview')"/>
@@ -923,9 +929,50 @@ function previewNums(inputId,previewId) {
 }
 window.previewNums = previewNums;
 
-function parseBuyerNames(raw) {
-  return String(raw||'').split(/[\n,，、/／]+/).map(function(s){return s.trim();}).filter(Boolean);
+function addBuyerRow(name,status) {
+  var box=document.getElementById('nb-buyers');
+  if(!box) return;
+  var row=document.createElement('div');
+  row.className='nbuyer-row';
+  row.innerHTML='<input class="nbuyer-name" type="text" placeholder="姓名／暱稱" value="'+esc(name||'')+'"/>'+
+    '<select class="nbuyer-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>'+
+    '<button type="button" onclick="delBuyerRow(this)">×</button>';
+  box.appendChild(row);
+  row.querySelector('.nbuyer-status').value=status||document.getElementById('nb-status').value||'paid';
 }
+window.addBuyerRow = addBuyerRow;
+
+function delBuyerRow(btn) {
+  var rows=document.querySelectorAll('#nb-buyers .nbuyer-row');
+  if(rows.length<=1){toast('至少保留一位購買人');return;}
+  btn.closest('.nbuyer-row').remove();
+}
+window.delBuyerRow = delBuyerRow;
+
+function getNewBuyerEntries() {
+  var rows=Array.from(document.querySelectorAll('#nb-buyers .nbuyer-row'));
+  return rows.map(function(row){
+    return {
+      name:(row.querySelector('.nbuyer-name').value||'').trim(),
+      status:row.querySelector('.nbuyer-status').value||'paid'
+    };
+  }).filter(function(x){return x.name;});
+}
+
+function resetBuyerRows() {
+  var box=document.getElementById('nb-buyers');
+  if(box) box.innerHTML='';
+  addBuyerRow('',document.getElementById('nb-status').value||'paid');
+}
+
+function syncEmptyBuyerRowsStatus() {
+  var status=document.getElementById('nb-status').value||'paid';
+  document.querySelectorAll('#nb-buyers .nbuyer-row').forEach(function(row){
+    var name=(row.querySelector('.nbuyer-name').value||'').trim();
+    if(!name) row.querySelector('.nbuyer-status').value=status;
+  });
+}
+window.syncEmptyBuyerRowsStatus = syncEmptyBuyerRowsStatus;
 
 function getOrCreateBuyerGroup(name, nums) {
   name=(name||'').trim();
@@ -954,8 +1001,8 @@ function toggleBuyerMode() {
 window.toggleBuyerMode = toggleBuyerMode;
 
 function addBuyer() {
-  var names=parseBuyerNames(document.getElementById('nb-name').value);
-  if(!names.length){toast('⚠️ 請輸入姓名');return;}
+  var buyerEntries=getNewBuyerEntries();
+  if(!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
   var type=document.getElementById('nb-type').value;
@@ -987,12 +1034,12 @@ function addBuyer() {
   }
   var buyers=lb().slice();
   var baseId=Date.now();
-  names.slice().reverse().forEach(function(name,idx){
-    var purchases=[{id:baseId+idx,status:status,nums:nums.slice(),note:note,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
-    buyers.unshift({id:baseId+1000+idx,name:name,groupId:groupId,purchases:purchases});
+  buyerEntries.slice().reverse().forEach(function(entry,idx){
+    var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:note,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
+    buyers.unshift({id:baseId+1000+idx,name:entry.name,groupId:groupId,purchases:purchases});
   });
   sb(buyers);
-  document.getElementById('nb-name').value='';
+  resetBuyerRows();
   document.getElementById('nb-group-name').value='';
   document.getElementById('nb-nums').value='';
   document.getElementById('nb-note').value='';
@@ -1006,7 +1053,7 @@ function addBuyer() {
   document.getElementById('nb-ex-in-preview').innerHTML='';
   document.getElementById('nb-ex-out').value='';
   document.getElementById('nb-ex-out-preview').innerHTML='';
-  toast('✅ 已新增 '+names.length+' 位購買人！');
+  toast('✅ 已新增 '+buyerEntries.length+' 位購買人！');
   goBTab('pending',document.querySelectorAll('.bstab')[0]);
 }
 window.addBuyer = addBuyer;
@@ -1022,7 +1069,11 @@ function goBTab(tab,btn) {
   if(tab==='pending'){document.getElementById('btc-pending').style.display='block';renderPending();}
   else if(tab==='groups'){document.getElementById('btc-groups').style.display='block';renderBuyerGroups();}
   else if(tab==='all'){document.getElementById('btc-all').style.display='block';renderAllBuyers();}
-  else if(tab==='new'){document.getElementById('btc-new').style.display='block';refreshBuyerGroupSels();}
+  else if(tab==='new'){
+    document.getElementById('btc-new').style.display='block';
+    refreshBuyerGroupSels();
+    if(!document.querySelector('#nb-buyers .nbuyer-row')) resetBuyerRows();
+  }
 }
 window.goBTab = goBTab;
 
@@ -1243,6 +1294,12 @@ function buyerHasPaymentStatus(buyer, status) {
   });
 }
 
+function buyerHasExchange(buyer) {
+  return (buyer.purchases || []).some(function(pur) {
+    return pur.exchange && pur.exchange.type === 'exchange';
+  });
+}
+
 function buyerNeedsPending(buyer) {
   var result = false;
   buyer.purchases.forEach(function(pur) {
@@ -1272,7 +1329,8 @@ function renderPending() {
   buyers.forEach(function(buyer){
     var needs=buyerNeedsPending(buyer);
     if(!needs&&!showDone) return;
-    if(buyerPayFilter!=='all'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
+    if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
+    if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
     html+=renderBuyerCard(buyer);
   });
   el.innerHTML=html||'<div class="empty">✅ 全部已發送完畢</div>';
