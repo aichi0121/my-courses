@@ -431,6 +431,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
     <div class="num-hint">用空格、頓號或逗號分隔</div>
     <div class="parsed-nums" id="eg-preview"></div>
   </div>
+  <div class="fg"><label>備註（選填）</label><textarea id="eg-note" placeholder="備註..."></textarea></div>
   <div class="fg"><label>購買人</label>
     <div id="eg-members"></div>
     <button class="add-pur-btn" type="button" onclick="addEditGroupMember()">＋ 新增購買人</button>
@@ -1190,6 +1191,12 @@ function addBuyer() {
   if(!nums.length && type !== 'exchange' && type !== 'gift'){toast('⚠️ 請輸入課程編號');return;}
   var status=document.getElementById('nb-status').value;
   var note=document.getElementById('nb-note').value.trim();
+  if(mode==='group'&&groupId&&note){
+    var groupsForNote=lbg().slice();
+    var groupForNote=groupsForNote.find(function(g){return String(g.id)===String(groupId);});
+    if(groupForNote){groupForNote.note=note;sbg(groupsForNote);}
+  }
+  var purchaseNote=mode==='group'?buyerGroupNote(groupId,findBuyerGroup(groupId))||note:note;
   var exchange=null;
   if(type==='exchange'||type==='gift'){
     var inNums=parseNums(document.getElementById('nb-ex-in').value);
@@ -1207,7 +1214,7 @@ function addBuyer() {
   var buyers=lb().slice();
   var baseId=Date.now();
   buyerEntries.slice().reverse().forEach(function(entry,idx){
-    var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:note,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
+    var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:purchaseNote,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
     buyers.unshift({id:baseId+1000+idx,name:entry.name,groupId:groupId,purchases:purchases});
   });
   sb(buyers);
@@ -1315,6 +1322,18 @@ function buyerGroupStats(groupId) {
 
 function groupMembers(groupId) {
   return lb().filter(function(b){return buyerGroupId(b)===String(groupId);});
+}
+
+function buyerGroupNote(groupId, group) {
+  if(group&&group.note) return group.note;
+  var found='';
+  groupMembers(groupId).some(function(b){
+    return (b.purchases||[]).some(function(p){
+      if(!p.exchange&&p.note){found=p.note;return true;}
+      return false;
+    });
+  });
+  return found;
 }
 
 function firstBuyPurchase(buyer) {
@@ -1549,6 +1568,7 @@ function openEditGroup(btn) {
   document.getElementById('eg-id').value=gid;
   document.getElementById('eg-name').value=g.name||'';
   document.getElementById('eg-nums').value=(g.nums||[]).join(' ');
+  document.getElementById('eg-note').value=buyerGroupNote(gid,g)||'';
   previewNums('eg-nums','eg-preview');
   document.getElementById('eg-members').innerHTML='';
   groupMembers(gid).forEach(function(b){
@@ -1564,11 +1584,13 @@ function saveEditGroup() {
   var name=document.getElementById('eg-name').value.trim();
   if(!name){toast('⚠️ 請輸入團購名稱');return;}
   var nums=parseNums(document.getElementById('eg-nums').value);
+  var note=document.getElementById('eg-note').value.trim();
   var groups=lbg().slice();
   var g=groups.find(function(x){return String(x.id)===gid;});
   if(!g) return;
   var oldNums=(g.nums||[]).slice();
   g.name=name;
+  g.note=note;
   g.nums=nums;
   g.sentNums=(g.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;});
   sbg(groups);
@@ -1594,10 +1616,11 @@ function saveEditGroup() {
     b.groupId=gid;
     var pur=firstBuyPurchase(b);
     if(!pur){
-      pur={id:baseId+idx,status:r.status,nums:nums.slice(),note:'',sentNums:[],exchange:null};
+      pur={id:baseId+idx,status:r.status,nums:nums.slice(),note:note,sentNums:[],exchange:null};
       b.purchases.push(pur);
     } else {
       pur.status=r.status;
+      pur.note=note;
       if(arrSame(pur.nums||[],oldNums)) pur.nums=nums.slice();
       else nums.forEach(function(n){if((pur.nums||[]).indexOf(n)<0){if(!pur.nums)pur.nums=[];pur.nums.push(n);}});
       pur.sentNums=(pur.sentNums||[]).filter(function(n){return (pur.nums||[]).indexOf(n)>=0;});
@@ -1613,6 +1636,8 @@ function renderPendingGroupCard(g) {
   var st=buyerGroupStats(String(g.id));
   var nums=g.nums||[];
   var sentNums=g.sentNums||[];
+  var note=buyerGroupNote(String(g.id),g);
+  var noteHtml=note?'<div style="font-size:.7rem;color:var(--sub);margin-top:4px;">備註：'+esc(note)+'</div>':'';
   var pendingWithLink=nums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
   var pendingNoLink=nums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&sentNums.indexOf(n)<0;});
   var btn='';
@@ -1628,7 +1653,7 @@ function renderPendingGroupCard(g) {
   }
   return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name)+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">團購</span></div><div class="buyer-btns"><button class="cbtn" data-gid="'+g.id+'" onclick="openEditGroup(this)">✏️</button><button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button></div></div>'+
     '<div class="group-meta" style="margin-bottom:7px;">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'</div>'+
-    '<div class="pr-row">'+renderGroupCourseRows(nums,sentNums,g.id,true)+btn+'</div></div>';
+    '<div class="pr-row">'+renderGroupCourseRows(nums,sentNums,g.id,true)+noteHtml+btn+'</div></div>';
 }
 
 function delBuyerGroup(btn) {
@@ -1754,10 +1779,12 @@ function renderGroupMembers(gid) {
 
 function renderAllGroupCard(g) {
   var st=buyerGroupStats(String(g.id));
+  var note=buyerGroupNote(String(g.id),g);
+  var noteHtml=note?'<div style="font-size:.7rem;color:var(--sub);margin-top:4px;">備註：'+esc(note)+'</div>':'';
   return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name||'')+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">團購</span></div>'+
     '<div class="buyer-btns"><button class="cbtn" data-gid="'+g.id+'" onclick="goEditGroup(this)">✏️</button><button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button></div></div>'+
     '<div class="group-meta" style="margin-bottom:7px;">共 '+st.buyers+' 人｜已付款 '+st.paid+'｜預約未付款 '+st.pre+'｜待處理 '+st.pending+'</div>'+
-    '<div class="pr-row">'+renderGroupCourseRows(g.nums||[],g.sentNums||[],g.id,false)+'</div>'+
+    '<div class="pr-row">'+renderGroupCourseRows(g.nums||[],g.sentNums||[],g.id,false)+noteHtml+'</div>'+
     '<div class="pr-row">'+renderGroupMembers(String(g.id))+'</div></div>';
 }
 
