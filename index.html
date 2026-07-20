@@ -1738,18 +1738,19 @@ function exchangeHasPending(ex) {
 function buyerNeedsPending(buyer) {
   var result = false;
   buyer.purchases.forEach(function(pur) {
-    if(pur.exchange && pur.exchange.type === 'exchange') {
-      if(exchangeHasPending(pur.exchange)) result = true;
-    } else if(pur.exchange && pur.exchange.type === 'gift') {
-      if(exchangeHasPending(pur.exchange)) result = true;
-    } else {
-      var sentNums = pur.sentNums || [];
-      (pur.nums || []).forEach(function(n) {
-        if(sentNums.indexOf(n) < 0) result = true;
-      });
-    }
+    if(purchaseNeedsPending(pur)) result = true;
   });
   return result;
+}
+
+function purchaseNeedsPending(pur) {
+  if(pur.exchange) return exchangeHasPending(pur.exchange);
+  var sentNums=pur.sentNums||[];
+  return (pur.nums||[]).some(function(n){return sentNums.indexOf(n)<0;});
+}
+
+function buyerHasCompletedPurchase(buyer) {
+  return (buyer.purchases||[]).some(function(pur){return !purchaseNeedsPending(pur);});
 }
 
 function buyerHistorySummary(buyer) {
@@ -1797,11 +1798,11 @@ function renderPending() {
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
     if(buyerPayFilter==='completed'){
-      if(needs) return;
+      if(!buyerHasCompletedPurchase(buyer)) return;
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
-    html+=renderBuyerCard(buyer,true);
+    html+=renderBuyerCard(buyer,buyerPayFilter==='completed'?'completed':'pending');
   });
   el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
@@ -1849,7 +1850,9 @@ function renderAllBuyers() {
 }
 window.renderAllBuyers = renderAllBuyers;
 
-function renderBuyerCard(buyer, onlyPending) {
+function renderBuyerCard(buyer, viewMode) {
+  var onlyPending=viewMode===true||viewMode==='pending';
+  var onlyCompleted=viewMode==='completed';
   var firstPur=buyer.purchases&&buyer.purchases[0];
   var firstType=firstPur&&firstPur.exchange?firstPur.exchange.type:'buy';
   var stLabel='';
@@ -1871,11 +1874,9 @@ function renderBuyerCard(buyer, onlyPending) {
     var purType=pur.exchange?pur.exchange.type:'buy';
     var ratioLabel=pur.exchange?exchangeRatioText(pur.exchange):'';
     if(onlyPending){
-      if(pur.exchange){
-        if(!exchangeHasPending(pur.exchange)) return;
-      } else if(!buyerNeedsPending({purchases:[pur]})) {
-        return;
-      }
+      if(!purchaseNeedsPending(pur)) return;
+    } else if(onlyCompleted){
+      if(purchaseNeedsPending(pur)) return;
     }
     var statusLabel='';
     if(purType==='buy'){
@@ -1973,7 +1974,7 @@ if(pur.exchange){
   exHtml='<div style="margin-top:4px;">'+inRows+outRows+'</div>';
 }
     
-pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買'+(ratioLabel?'｜'+ratioLabel:'')+'</span><span>'+statusLabel+' <button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
+pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買'+(ratioLabel?'｜'+ratioLabel:'')+'</span><span>'+statusLabel+' <button class="btn-sm" style="padding:4px 8px;margin-left:4px;" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️ 編輯</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
   var needs=buyerNeedsPending(buyer);
