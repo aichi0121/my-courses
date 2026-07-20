@@ -413,10 +413,7 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <input type="hidden" id="eb-id"/>
   <div class="fg"><label>姓名／暱稱 *</label><input id="eb-name" type="text"/></div>
   <div class="fg"><label>所屬團購</label><select id="eb-group"></select></div>
-  <div class="fg"><label>付款狀態</label>
-    <select id="eb-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
-  </div>
-  <div class="fg"><label>備註</label><textarea id="eb-note"></textarea></div>
+  <div class="fg"><label>購買／交換紀錄</label><div id="eb-purchases"></div></div>
   <div class="macts">
     <button class="mcancel" onclick="closeMo('editBuyerMo')">取消</button>
     <button class="msave" onclick="saveEditBuyer()">💾 儲存</button>
@@ -1991,6 +1988,66 @@ function copySend(btn) {
 }
 window.copySend = copySend;
 
+function editExchangeText(nums, fallback) {
+  return nums&&nums.length?nums.join(' '):(fallback||'');
+}
+
+function renderEditBuyerPurchases(buyer) {
+  var box=document.getElementById('eb-purchases');
+  if(!box) return;
+  var purchases=buyer.purchases||[];
+  if(!purchases.length){box.innerHTML='<div class="qempty" style="padding:10px 0;">尚無購買紀錄</div>';return;}
+  box.innerHTML=purchases.map(function(pur,pi){
+    var type=pur.exchange?pur.exchange.type:'buy';
+    var ex=pur.exchange||{};
+    var inText=editExchangeText(ex.inNums,ex.inCourse);
+    var outText=editExchangeText(ex.outNums,ex.outCourse);
+    var buyDisplay=type==='buy'?'block':'none';
+    var exDisplay=type==='buy'?'none':'block';
+    var outDisplay=type==='exchange'?'block':'none';
+    return '<div class="pr-row eb-pur-row" data-pi="'+pi+'">'+
+      '<div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span></div>'+
+      '<div class="fg"><label>交易類型</label><select class="eb-pur-type" onchange="toggleEditPurchaseType(this)">'+
+        '<option value="buy"'+(type==='buy'?' selected':'')+'>💰 一般購買</option>'+
+        '<option value="exchange"'+(type==='exchange'?' selected':'')+'>🔄 交換課程</option>'+
+        '<option value="gift"'+(type==='gift'?' selected':'')+'>📥 對方贈送我</option>'+
+      '</select></div>'+
+      '<div class="eb-pur-buy-wrap" style="display:'+buyDisplay+'">'+
+        '<div class="fg"><label>付款狀態</label><select class="eb-pur-status"><option value="paid"'+((pur.status||'paid')==='paid'?' selected':'')+'>✅ 已付款</option><option value="pre"'+((pur.status||'paid')==='pre'?' selected':'')+'>⏳ 預約未付款</option></select></div>'+
+        '<div class="fg"><label>購買課程編號</label><input class="num-inp eb-pur-nums" type="text" value="'+esc((pur.nums||[]).join(' '))+'" placeholder="例：80 30 33" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div></div>'+
+      '</div>'+
+      '<div class="eb-pur-ex-wrap" style="display:'+exDisplay+'">'+
+        '<div class="fg"><label>對方給我的課程名稱</label><input class="num-inp eb-ex-in" type="text" value="'+esc(inText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-in-status" style="margin-top:5px;"><option value="pending"'+((ex.inStatus||'pending')==='pending'?' selected':'')+'>⏳ 未開課／待收</option><option value="received"'+(ex.inStatus==='received'?' selected':'')+'>✅ 已收到</option></select></div>'+
+        '<div class="fg eb-ex-out-wrap" style="display:'+outDisplay+'"><label>我給對方的課程名稱</label><input class="num-inp eb-ex-out" type="text" value="'+esc(outText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-out-status" style="margin-top:5px;"><option value="pending"'+((ex.outStatus||'pending')==='pending'?' selected':'')+'>⏳ 待發</option><option value="sent"'+(ex.outStatus==='sent'?' selected':'')+'>✅ 已發</option></select></div>'+
+      '</div>'+
+      '<div class="fg"><label>備註</label><textarea class="eb-pur-note" placeholder="備註...">'+esc(pur.note||'')+'</textarea></div>'+
+    '</div>';
+  }).join('');
+  box.querySelectorAll('.num-inp').forEach(previewNumsInRow);
+}
+
+function previewNumsInRow(inp) {
+  var wrap=inp.closest('.fg');
+  var prev=wrap?wrap.querySelector('.parsed-nums'):null;
+  if(prev) prev.innerHTML=parseNums(inp.value).map(function(n){
+    return '<span class="pnum">'+esc(n)+'</span>';
+  }).join('');
+}
+window.previewNumsInRow = previewNumsInRow;
+
+function toggleEditPurchaseType(sel) {
+  var row=sel.closest('.eb-pur-row');
+  if(!row) return;
+  var type=sel.value;
+  var buy=row.querySelector('.eb-pur-buy-wrap');
+  var ex=row.querySelector('.eb-pur-ex-wrap');
+  var out=row.querySelector('.eb-ex-out-wrap');
+  if(buy) buy.style.display=type==='buy'?'block':'none';
+  if(ex) ex.style.display=type==='buy'?'none':'block';
+  if(out) out.style.display=type==='exchange'?'block':'none';
+}
+window.toggleEditPurchaseType = toggleEditPurchaseType;
+
 function openEditBuyer(btn) {
   var bid=parseInt(btn.dataset.bid);
   var b=lb().find(function(x){return x.id===bid;}); if(!b) return;
@@ -1998,9 +2055,7 @@ function openEditBuyer(btn) {
   document.getElementById('eb-id').value=b.id;
   document.getElementById('eb-name').value=b.name||'';
   document.getElementById('eb-group').value=buyerGroupId(b);
-  var st=b.purchases&&b.purchases[0]?b.purchases[0].status:'paid';
-  document.getElementById('eb-status').value=st;
-  document.getElementById('eb-note').value=(b.purchases&&b.purchases[0]&&b.purchases[0].note)||'';
+  renderEditBuyerPurchases(b);
   openMo('editBuyerMo');
 }
 window.openEditBuyer = openEditBuyer;
@@ -2009,17 +2064,49 @@ function saveEditBuyer() {
   var id=parseInt(document.getElementById('eb-id').value);
   var name=document.getElementById('eb-name').value.trim();
   if(!name){toast('⚠️ 請輸入姓名');return;}
-  var status=document.getElementById('eb-status').value;
   var groupId=document.getElementById('eb-group').value||'';
-  var note=document.getElementById('eb-note').value.trim();
   var buyers=lb().slice();
   var i=buyers.findIndex(function(x){return x.id===id;}); if(i===-1) return;
   buyers[i].name=name;
   buyers[i].groupId=groupId;
-  if(buyers[i].purchases&&buyers[i].purchases[0]){
-    buyers[i].purchases[0].status=status;
-    buyers[i].purchases[0].note=note;
-  }
+  var oldPurchases=buyers[i].purchases||[];
+  var rows=Array.from(document.querySelectorAll('#eb-purchases .eb-pur-row'));
+  var nextPurchases=rows.map(function(row){
+    var pi=parseInt(row.dataset.pi);
+    var old=oldPurchases[pi]||{};
+    var type=row.querySelector('.eb-pur-type').value;
+    var note=(row.querySelector('.eb-pur-note').value||'').trim();
+    if(type==='buy'){
+      var nums=parseNums(row.querySelector('.eb-pur-nums').value);
+      return {
+        id: old.id||Date.now()+pi,
+        status: row.querySelector('.eb-pur-status').value||'paid',
+        nums: nums,
+        note: note,
+        sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
+        exchange: null
+      };
+    }
+    var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
+    var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
+    return {
+      id: old.id||Date.now()+pi,
+      status: old.status||'paid',
+      nums: [],
+      note: note,
+      sentNums: old.sentNums||[],
+      exchange: {
+        type: type,
+        inNums: parseNums(inRaw),
+        inCourse: inRaw,
+        inStatus: row.querySelector('.eb-ex-in-status').value||'pending',
+        outNums: type==='exchange'?parseNums(outRaw):[],
+        outCourse: outRaw,
+        outStatus: type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):''
+      }
+    };
+  });
+  buyers[i].purchases=nextPurchases;
   sb(buyers); closeMo('editBuyerMo');
   renderPending(); renderAllBuyers(); toast('✅ 已儲存！');
 }
