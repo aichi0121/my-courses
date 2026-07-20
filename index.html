@@ -168,11 +168,12 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .pnum.nf{background:#fff5f5;color:#c53030;}
 .edit-num-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;}
 .edit-num-list:empty{display:none;}
-.edit-num-row{display:grid;grid-template-columns:18px 22px 30px minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.edit-num-row{display:grid;grid-template-columns:18px 22px minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
 .edit-num-row:last-child{border-bottom:none;}
 .edit-num-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
-.edit-num-row .ci-num{width:auto;}
 .edit-num-dir{font-size:.72rem;color:var(--accent);font-weight:800;}
+.edit-course-main{min-width:0;font-size:.75rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.edit-course-code{color:var(--accent);font-weight:800;margin-right:5px;}
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:12px;}
 .mo.open{display:flex;}
 .mbox{background:#fff;border-radius:14px;padding:16px 13px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);border:1px solid var(--border);}
@@ -881,6 +882,12 @@ function sortNumsByCourseOrder(nums) {
     if(!isNaN(an)&&!isNaN(bn)&&an!==bn) return an-bn;
     return a.localeCompare(b);
   });
+}
+function courseTitleWithoutNum(num, course) {
+  if(!course) return '找不到課程';
+  var title=course.name||'';
+  var n=parseInt(num,10);
+  return title.replace(new RegExp('^0*'+n+'\\s*[|｜]?\\s*'), '').trim()||title;
 }
 function findByNum(num){var n=parseInt(num,10);return lc().find(function(c){var m=(c.name||'').match(/^(\d+)/);return m&&parseInt(m[1],10)===n;})||null;}
 
@@ -1945,7 +1952,7 @@ if(pur.exchange){
   var ex=pur.exchange;
 
   var inNums=exchangeNums(ex,'in');
-  var visibleInNums=onlyPending?inNums.filter(function(n){return !exchangeItemDone(ex,'in',n);}):inNums;
+  var visibleInNums=inNums;
   var inRows=visibleInNums.map(function(n){
     var c=findByNum(n);
     var name=c?esc(c.name):esc(n||'—');
@@ -1967,7 +1974,7 @@ if(pur.exchange){
   var outRows='';
   if(ex.type==='exchange'){
     var outNums=exchangeNums(ex,'out');
-    var visibleOutNums=onlyPending?outNums.filter(function(n){return !exchangeItemDone(ex,'out',n);}):outNums;
+    var visibleOutNums=outNums;
     outRows=visibleOutNums.map(function(n){
       var outC=findByNum(n);
       var outName=outC?esc(outC.name):esc(n||'—');
@@ -2148,11 +2155,11 @@ function renderEditNumList(inp) {
     var doneText=dir==='in'?'已收到':'已發';
     var pendText=dir==='in'?'待收':'待發';
     var tagClass=checked?'ci-sent':'ci-ready';
+    var title=courseTitleWithoutNum(n,c);
     return '<label class="edit-num-row">'+
       '<input type="checkbox" class="eb-ex-done" data-dir="'+dir+'" data-num="'+esc(n)+'" '+(checked?'checked':'')+' onchange="toggleEditNumDone(this)"/>'+
       '<span class="edit-num-dir">'+dirLabel+'</span>'+
-      '<span class="ci-num">#'+esc(n)+'</span>'+
-      '<span class="ci-name">'+(c?esc(c.name):'找不到課程')+'</span>'+
+      '<span class="edit-course-main"><span class="edit-course-code">#'+esc(n)+'</span>'+esc(title)+'</span>'+
       '<span class="ci-tag '+tagClass+'">'+(checked?'✓ ':'⏳ ')+(checked?doneText:pendText)+'</span>'+
     '</label>';
   }).join('');
