@@ -413,10 +413,19 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
   <input type="hidden" id="eb-id"/>
   <div class="fg"><label>姓名／暱稱 *</label><input id="eb-name" type="text"/></div>
   <div class="fg"><label>所屬團購</label><select id="eb-group"></select></div>
-  <div class="fg"><label>購買／交換紀錄</label><div id="eb-purchases"></div></div>
   <div class="macts">
     <button class="mcancel" onclick="closeMo('editBuyerMo')">取消</button>
     <button class="msave" onclick="saveEditBuyer()">💾 儲存</button>
+  </div>
+</div></div>
+<div class="mo" id="editPurchaseMo"><div class="mbox">
+  <h3>✏️ 編輯購買紀錄</h3>
+  <input type="hidden" id="ep-bid"/>
+  <input type="hidden" id="ep-pi"/>
+  <div id="ep-fields"></div>
+  <div class="macts">
+    <button class="mcancel" onclick="closeMo('editPurchaseMo')">取消</button>
+    <button class="msave" onclick="saveEditPurchase()">💾 儲存</button>
   </div>
 </div></div>
 <div class="mo" id="editGroupMo"><div class="mbox">
@@ -1919,7 +1928,7 @@ if(pur.exchange){
   exHtml='<div style="margin-top:4px;">'+inRows+outRows+'</div>';
 }
     
-pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
+pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span><span>'+statusLabel+' <button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
   var needs=buyerNeedsPending(buyer);
@@ -1992,12 +2001,7 @@ function editExchangeText(nums, fallback) {
   return nums&&nums.length?nums.join(' '):(fallback||'');
 }
 
-function renderEditBuyerPurchases(buyer) {
-  var box=document.getElementById('eb-purchases');
-  if(!box) return;
-  var purchases=buyer.purchases||[];
-  if(!purchases.length){box.innerHTML='<div class="qempty" style="padding:10px 0;">尚無購買紀錄</div>';return;}
-  box.innerHTML=purchases.map(function(pur,pi){
+function renderEditPurchaseFields(pur,pi) {
     var type=pur.exchange?pur.exchange.type:'buy';
     var ex=pur.exchange||{};
     var inText=editExchangeText(ex.inNums,ex.inCourse);
@@ -2022,7 +2026,14 @@ function renderEditBuyerPurchases(buyer) {
       '</div>'+
       '<div class="fg"><label>備註</label><textarea class="eb-pur-note" placeholder="備註...">'+esc(pur.note||'')+'</textarea></div>'+
     '</div>';
-  }).join('');
+}
+
+function renderEditBuyerPurchases(buyer) {
+  var box=document.getElementById('eb-purchases');
+  if(!box) return;
+  var purchases=buyer.purchases||[];
+  if(!purchases.length){box.innerHTML='<div class="qempty" style="padding:10px 0;">尚無購買紀錄</div>';return;}
+  box.innerHTML=purchases.map(renderEditPurchaseFields).join('');
   box.querySelectorAll('.num-inp').forEach(previewNumsInRow);
 }
 
@@ -2030,7 +2041,8 @@ function previewNumsInRow(inp) {
   var wrap=inp.closest('.fg');
   var prev=wrap?wrap.querySelector('.parsed-nums'):null;
   if(prev) prev.innerHTML=parseNums(inp.value).map(function(n){
-    return '<span class="pnum">'+esc(n)+'</span>';
+    var c=findByNum(n);
+    return '<span class="pnum'+(c?'':' nf')+'">'+(c?esc(c.name):'#'+esc(n)+' 找不到')+'</span>';
   }).join('');
 }
 window.previewNumsInRow = previewNumsInRow;
@@ -2055,7 +2067,6 @@ function openEditBuyer(btn) {
   document.getElementById('eb-id').value=b.id;
   document.getElementById('eb-name').value=b.name||'';
   document.getElementById('eb-group').value=buyerGroupId(b);
-  renderEditBuyerPurchases(b);
   openMo('editBuyerMo');
 }
 window.openEditBuyer = openEditBuyer;
@@ -2069,48 +2080,70 @@ function saveEditBuyer() {
   var i=buyers.findIndex(function(x){return x.id===id;}); if(i===-1) return;
   buyers[i].name=name;
   buyers[i].groupId=groupId;
-  var oldPurchases=buyers[i].purchases||[];
-  var rows=Array.from(document.querySelectorAll('#eb-purchases .eb-pur-row'));
-  var nextPurchases=rows.map(function(row){
-    var pi=parseInt(row.dataset.pi);
-    var old=oldPurchases[pi]||{};
-    var type=row.querySelector('.eb-pur-type').value;
-    var note=(row.querySelector('.eb-pur-note').value||'').trim();
-    if(type==='buy'){
-      var nums=parseNums(row.querySelector('.eb-pur-nums').value);
-      return {
-        id: old.id||Date.now()+pi,
-        status: row.querySelector('.eb-pur-status').value||'paid',
-        nums: nums,
-        note: note,
-        sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
-        exchange: null
-      };
-    }
-    var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
-    var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
-    return {
-      id: old.id||Date.now()+pi,
-      status: old.status||'paid',
-      nums: [],
-      note: note,
-      sentNums: old.sentNums||[],
-      exchange: {
-        type: type,
-        inNums: parseNums(inRaw),
-        inCourse: inRaw,
-        inStatus: row.querySelector('.eb-ex-in-status').value||'pending',
-        outNums: type==='exchange'?parseNums(outRaw):[],
-        outCourse: outRaw,
-        outStatus: type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):''
-      }
-    };
-  });
-  buyers[i].purchases=nextPurchases;
   sb(buyers); closeMo('editBuyerMo');
   renderPending(); renderAllBuyers(); toast('✅ 已儲存！');
 }
 window.saveEditBuyer = saveEditBuyer;
+
+function readEditPurchaseRow(row, old, pi) {
+  var type=row.querySelector('.eb-pur-type').value;
+  var note=(row.querySelector('.eb-pur-note').value||'').trim();
+  if(type==='buy'){
+    var nums=parseNums(row.querySelector('.eb-pur-nums').value);
+    return {
+      id: old.id||Date.now()+pi,
+      status: row.querySelector('.eb-pur-status').value||'paid',
+      nums: nums,
+      note: note,
+      sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
+      exchange: null
+    };
+  }
+  var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
+  var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
+  return {
+    id: old.id||Date.now()+pi,
+    status: old.status||'paid',
+    nums: [],
+    note: note,
+    sentNums: old.sentNums||[],
+    exchange: {
+      type: type,
+      inNums: parseNums(inRaw),
+      inCourse: inRaw,
+      inStatus: row.querySelector('.eb-ex-in-status').value||'pending',
+      outNums: type==='exchange'?parseNums(outRaw):[],
+      outCourse: outRaw,
+      outStatus: type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):''
+    }
+  };
+}
+
+function openEditPurchase(btn) {
+  var bid=parseInt(btn.dataset.bid);
+  var pi=parseInt(btn.dataset.pi);
+  var b=lb().find(function(x){return x.id===bid;});
+  if(!b||!b.purchases||!b.purchases[pi]) return;
+  document.getElementById('ep-bid').value=bid;
+  document.getElementById('ep-pi').value=pi;
+  document.getElementById('ep-fields').innerHTML=renderEditPurchaseFields(b.purchases[pi],pi);
+  document.querySelectorAll('#ep-fields .num-inp').forEach(previewNumsInRow);
+  openMo('editPurchaseMo');
+}
+window.openEditPurchase = openEditPurchase;
+
+function saveEditPurchase() {
+  var bid=parseInt(document.getElementById('ep-bid').value);
+  var pi=parseInt(document.getElementById('ep-pi').value);
+  var buyers=lb().slice();
+  var b=buyers.find(function(x){return x.id===bid;});
+  if(!b||!b.purchases||!b.purchases[pi]) return;
+  var row=document.querySelector('#ep-fields .eb-pur-row');
+  b.purchases[pi]=readEditPurchaseRow(row,b.purchases[pi],pi);
+  sb(buyers); closeMo('editPurchaseMo');
+  renderPending(); renderAllBuyers(); toast('✅ 購買紀錄已儲存！');
+}
+window.saveEditPurchase = saveEditPurchase;
 
 function delBuyer(btn) {
   var bid=parseInt(btn.dataset.bid);
