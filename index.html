@@ -168,9 +168,8 @@ body{font-family:-apple-system,sans-serif;background:var(--bg);min-height:100vh;
 .pnum.nf{background:#fff5f5;color:#c53030;}
 .edit-num-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;}
 .edit-num-list:empty{display:none;}
-.edit-num-row{display:grid;grid-template-columns:18px 22px minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.edit-num-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
 .edit-num-row:last-child{border-bottom:none;}
-.edit-num-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
 .edit-num-dir{font-size:.72rem;color:var(--accent);font-weight:800;}
 .edit-course-main{min-width:0;font-size:.75rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .edit-course-code{color:var(--accent);font-weight:800;margin-right:5px;}
@@ -2156,30 +2155,13 @@ function renderEditNumList(inp) {
     var pendText=dir==='in'?'待收':'待發';
     var tagClass=checked?'ci-sent':'ci-ready';
     var title=courseTitleWithoutNum(n,c);
-    return '<label class="edit-num-row">'+
-      '<input type="checkbox" class="eb-ex-done" data-dir="'+dir+'" data-num="'+esc(n)+'" '+(checked?'checked':'')+' onchange="toggleEditNumDone(this)"/>'+
+    return '<div class="edit-num-row">'+
       '<span class="edit-num-dir">'+dirLabel+'</span>'+
       '<span class="edit-course-main"><span class="edit-course-code">#'+esc(n)+'</span>'+esc(title)+'</span>'+
       '<span class="ci-tag '+tagClass+'">'+(checked?'✓ ':'⏳ ')+(checked?doneText:pendText)+'</span>'+
-    '</label>';
+    '</div>';
   }).join('');
 }
-
-function toggleEditNumDone(cb) {
-  var row=cb.closest('.eb-pur-row');
-  var dir=cb.dataset.dir;
-  var num=String(cb.dataset.num||'');
-  var done=getEditDoneNums(row,dir);
-  if(cb.checked){
-    if(done.indexOf(num)<0) done.push(num);
-  } else {
-    done=done.filter(function(n){return n!==num;});
-  }
-  setEditDoneNums(row,dir,done);
-  var inp=row.querySelector(dir==='in'?'.eb-ex-in':'.eb-ex-out');
-  if(inp) renderEditNumList(inp);
-}
-window.toggleEditNumDone = toggleEditNumDone;
 
 function previewNumsInRow(inp) {
   if(inp.classList.contains('eb-ex-in')||inp.classList.contains('eb-ex-out')) {
