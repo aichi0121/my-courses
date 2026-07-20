@@ -1868,6 +1868,7 @@ function renderBuyerCard(buyer, viewMode) {
   var gid=buyerGroupId(buyer);
   if(gid) stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(gid))+'</span>'+stLabel;
   var pHtml='';
+  var shownPurchases=0;
   buyer.purchases.forEach(function(pur,pi){
     var sentNums=pur.sentNums||[];
     var allNums=pur.nums||[];
@@ -1878,6 +1879,7 @@ function renderBuyerCard(buyer, viewMode) {
     } else if(onlyCompleted){
       if(purchaseNeedsPending(pur)) return;
     }
+    shownPurchases++;
     var statusLabel='';
     if(purType==='buy'){
       statusLabel=pur.status==='pre'?'<span class="pr-st pr-pend">⏳ 預約未付</span>':'<span class="pr-st pr-done">✅ 已付款</span>';
@@ -1977,12 +1979,11 @@ if(pur.exchange){
 pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買'+(ratioLabel?'｜'+ratioLabel:'')+'</span><span>'+statusLabel+' <button class="btn-sm" style="padding:4px 8px;margin-left:4px;" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️ 編輯</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
-  var needs=buyerNeedsPending(buyer);
   var summary=buyerHistorySummary(buyer);
   var summaryHtml='';
   var bodyClass='';
   var toggleHtml='';
-  if(!needs && (summary.purchaseCount>1 || summary.courseCount>1 || summary.exchangeCount>0)){
+  if(shownPurchases>1){
     var shown=summary.names.slice(0,3).map(esc).join('、');
     var more=summary.names.length>3?' 等 '+summary.names.length+' 堂':'';
     summaryHtml='<div class="hist-summary">共購買 '+summary.purchaseCount+' 次｜'+summary.courseCount+' 堂課'+(summary.exchangeCount?'｜交換 '+summary.exchangeCount+' 次':'')+(shown?'<br>'+shown+more:'')+'</div>';
