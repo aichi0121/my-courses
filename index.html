@@ -1212,9 +1212,11 @@ function addBuyer() {
       inNums:inNums,
       inCourse:document.getElementById('nb-ex-in').value.trim(),
       inStatus:document.getElementById('nb-ex-in-status').value,
+      inReceivedNums:document.getElementById('nb-ex-in-status').value==='received'?inNums.slice():[],
       outNums:outNums,
       outCourse:document.getElementById('nb-ex-out').value.trim(),
-      outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:''
+      outStatus:type==='exchange'?document.getElementById('nb-ex-out-status').value:'',
+      outSentNums:type==='exchange'&&document.getElementById('nb-ex-out-status').value==='sent'?outNums.slice():[]
     };
   }
   var buyers=lb().slice();
@@ -1697,16 +1699,49 @@ function buyerHasExchange(buyer) {
   });
 }
 
+function exchangeNums(ex, dir) {
+  if(!ex) return [];
+  if(dir==='in'){
+    if(ex.inNums&&ex.inNums.length) return ex.inNums;
+    var inParsed=parseNums(ex.inCourse||'');
+    return inParsed.length?inParsed:(ex.inCourse?[ex.inCourse]:[]);
+  }
+  if(ex.outNums&&ex.outNums.length) return ex.outNums;
+  var outParsed=parseNums(ex.outCourse||'');
+  return outParsed.length?outParsed:(ex.outCourse?[ex.outCourse]:[]);
+}
+
+function exchangeDoneNums(ex, dir) {
+  if(!ex) return [];
+  if(dir==='in'){
+    if(Array.isArray(ex.inReceivedNums)) return ex.inReceivedNums;
+    return ex.inStatus==='received'?exchangeNums(ex,'in').slice():[];
+  }
+  if(Array.isArray(ex.outSentNums)) return ex.outSentNums;
+  return ex.outStatus==='sent'?exchangeNums(ex,'out').slice():[];
+}
+
+function exchangeItemDone(ex, dir, num) {
+  return exchangeDoneNums(ex,dir).indexOf(String(num))>=0;
+}
+
+function exchangeHasPending(ex) {
+  if(!ex) return false;
+  var inNums=exchangeNums(ex,'in');
+  var hasInPending=inNums.some(function(n){return !exchangeItemDone(ex,'in',n);});
+  if(ex.type==='gift') return hasInPending;
+  var outNums=exchangeNums(ex,'out');
+  var hasOutPending=outNums.some(function(n){return !exchangeItemDone(ex,'out',n);});
+  return hasInPending||hasOutPending;
+}
+
 function buyerNeedsPending(buyer) {
   var result = false;
   buyer.purchases.forEach(function(pur) {
     if(pur.exchange && pur.exchange.type === 'exchange') {
-      // 我還沒發 → 待發送
-      if((pur.exchange.outStatus || 'pending') === 'pending') result = true;
-      // 我發了但對方還沒給我 → 也要留在待發送
-      if((pur.exchange.inStatus || 'pending') !== 'received') result = true;
+      if(exchangeHasPending(pur.exchange)) result = true;
     } else if(pur.exchange && pur.exchange.type === 'gift') {
-      if((pur.exchange.inStatus || 'pending') === 'pending') result = true;
+      if(exchangeHasPending(pur.exchange)) result = true;
     } else {
       var sentNums = pur.sentNums || [];
       (pur.nums || []).forEach(function(n) {
@@ -1766,7 +1801,7 @@ function renderPending() {
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
-    html+=renderBuyerCard(buyer);
+    html+=renderBuyerCard(buyer,true);
   });
   el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
@@ -1809,12 +1844,12 @@ function renderAllBuyers() {
     return matchName&&buyerMatchesGroup(b);
   });
   var el=document.getElementById('all-buyers-list');
-  html+=buyers.map(function(b){return renderBuyerCard(b);}).join('');
+  html+=buyers.map(function(b){return renderBuyerCard(b,false);}).join('');
   el.innerHTML=html||'<div class="empty">📭 沒有符合的購買人</div>';
 }
 window.renderAllBuyers = renderAllBuyers;
 
-function renderBuyerCard(buyer) {
+function renderBuyerCard(buyer, onlyPending) {
   var firstPur=buyer.purchases&&buyer.purchases[0];
   var firstType=firstPur&&firstPur.exchange?firstPur.exchange.type:'buy';
   var stLabel='';
@@ -1834,6 +1869,14 @@ function renderBuyerCard(buyer) {
     var sentNums=pur.sentNums||[];
     var allNums=pur.nums||[];
     var purType=pur.exchange?pur.exchange.type:'buy';
+    var ratioLabel=pur.exchange?exchangeRatioText(pur.exchange):'';
+    if(onlyPending){
+      if(pur.exchange){
+        if(!exchangeHasPending(pur.exchange)) return;
+      } else if(!buyerNeedsPending({purchases:[pur]})) {
+        return;
+      }
+    }
     var statusLabel='';
     if(purType==='buy'){
       statusLabel=pur.status==='pre'?'<span class="pr-st pr-pend">⏳ 預約未付</span>':'<span class="pr-st pr-done">✅ 已付款</span>';
@@ -1871,9 +1914,9 @@ function renderBuyerCard(buyer) {
       sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+pendingNoLink.length+' 堂開課中</button>';
 } else {
   // 交換課程：我已發但對方還沒給我 → 繼續顯示待發送
-  var exStillPending = pur.exchange && pur.exchange.type === 'exchange' && pur.exchange.inStatus !== 'received';
+  var exStillPending = pur.exchange && exchangeHasPending(pur.exchange);
   if(exStillPending){
-    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待對方發送課程</button>';
+    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 交換尚未完成</button>';
   } else {
     sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
   }
@@ -1883,17 +1926,17 @@ function renderBuyerCard(buyer) {
 var exHtml='';
 if(pur.exchange){
   var ex=pur.exchange;
-  var inDone=ex.inStatus==='received';
-  var outDone=ex.outStatus==='sent';
 
-  var inNums=ex.inNums&&ex.inNums.length?ex.inNums:(ex.inCourse?[ex.inCourse]:[]);
-  var inRows=inNums.map(function(n){
+  var inNums=exchangeNums(ex,'in');
+  var visibleInNums=onlyPending?inNums.filter(function(n){return !exchangeItemDone(ex,'in',n);}):inNums;
+  var inRows=visibleInNums.map(function(n){
     var c=findByNum(n);
     var name=c?esc(c.name):esc(n||'—');
+    var inDone=exchangeItemDone(ex,'in',n);
     return '<div class="ci">'+
       '<input type="checkbox" class="ci-cb"'+
         (inDone?' checked':'')+
-        ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="in"'+
+        ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="in" data-num="'+esc(n)+'"'+
         ' onchange="toggleExStatus(this)"/>'+
       '<span class="ci-num">收</span>'+
       '<span class="ci-name">對方給我：'+name+'</span>'+
@@ -1906,14 +1949,16 @@ if(pur.exchange){
 
   var outRows='';
   if(ex.type==='exchange'){
-    var outNums=ex.outNums&&ex.outNums.length?ex.outNums:(ex.outCourse?[ex.outCourse]:[]);
-    outRows=outNums.map(function(n){
+    var outNums=exchangeNums(ex,'out');
+    var visibleOutNums=onlyPending?outNums.filter(function(n){return !exchangeItemDone(ex,'out',n);}):outNums;
+    outRows=visibleOutNums.map(function(n){
       var outC=findByNum(n);
       var outName=outC?esc(outC.name):esc(n||'—');
+      var outDone=exchangeItemDone(ex,'out',n);
       return '<div class="ci">'+
         '<input type="checkbox" class="ci-cb"'+
           (outDone?' checked':'')+
-          ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out"'+
+          ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out" data-num="'+esc(n)+'"'+
           ' onchange="toggleExStatus(this)"/>'+
         '<span class="ci-num">發</span>'+
         '<span class="ci-name">我給對方：'+outName+'</span>'+
@@ -1928,7 +1973,7 @@ if(pur.exchange){
   exHtml='<div style="margin-top:4px;">'+inRows+outRows+'</div>';
 }
     
-pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span><span>'+statusLabel+' <button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
+pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買'+(ratioLabel?'｜'+ratioLabel:'')+'</span><span>'+statusLabel+' <button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditPurchase(this)">✏️</button></span></div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
   var needs=buyerNeedsPending(buyer);
@@ -1966,13 +2011,20 @@ function toggleExStatus(cb) {
   var bid=parseInt(cb.dataset.bid);
   var pi=parseInt(cb.dataset.pi);
   var dir=cb.dataset.exdir;
+  var num=String(cb.dataset.num||'');
   var buyers=lb().slice();
   var b=buyers.find(function(x){return x.id===bid;}); if(!b) return;
   var pur=b.purchases[pi]; if(!pur||!pur.exchange) return;
   if(dir==='in'){
-    pur.exchange.inStatus=cb.checked?'received':'pending';
+    if(!Array.isArray(pur.exchange.inReceivedNums)) pur.exchange.inReceivedNums=exchangeDoneNums(pur.exchange,'in').slice();
+    if(cb.checked){if(pur.exchange.inReceivedNums.indexOf(num)<0) pur.exchange.inReceivedNums.push(num);}
+    else{pur.exchange.inReceivedNums=pur.exchange.inReceivedNums.filter(function(n){return n!==num;});}
+    pur.exchange.inStatus=exchangeNums(pur.exchange,'in').every(function(n){return pur.exchange.inReceivedNums.indexOf(String(n))>=0;})?'received':'pending';
   } else {
-    pur.exchange.outStatus=cb.checked?'sent':'pending';
+    if(!Array.isArray(pur.exchange.outSentNums)) pur.exchange.outSentNums=exchangeDoneNums(pur.exchange,'out').slice();
+    if(cb.checked){if(pur.exchange.outSentNums.indexOf(num)<0) pur.exchange.outSentNums.push(num);}
+    else{pur.exchange.outSentNums=pur.exchange.outSentNums.filter(function(n){return n!==num;});}
+    pur.exchange.outStatus=exchangeNums(pur.exchange,'out').every(function(n){return pur.exchange.outSentNums.indexOf(String(n))>=0;})?'sent':'pending';
   }
   sb(buyers); renderPending(); renderAllBuyers();
 }
@@ -2001,16 +2053,26 @@ function editExchangeText(nums, fallback) {
   return nums&&nums.length?nums.join(' '):(fallback||'');
 }
 
+function exchangeRatioText(ex) {
+  if(!ex) return '';
+  var inCount=(ex.inNums&&ex.inNums.length)?ex.inNums.length:parseNums(ex.inCourse||'').length;
+  var outCount=(ex.outNums&&ex.outNums.length)?ex.outNums.length:parseNums(ex.outCourse||'').length;
+  if(ex.type==='exchange') return inCount+'換'+outCount;
+  if(ex.type==='gift') return '收'+inCount+'堂';
+  return '';
+}
+
 function renderEditPurchaseFields(pur,pi) {
     var type=pur.exchange?pur.exchange.type:'buy';
     var ex=pur.exchange||{};
+    var ratio=exchangeRatioText(ex);
     var inText=editExchangeText(ex.inNums,ex.inCourse);
     var outText=editExchangeText(ex.outNums,ex.outCourse);
     var buyDisplay=type==='buy'?'block':'none';
     var exDisplay=type==='buy'?'none':'block';
     var outDisplay=type==='exchange'?'block':'none';
     return '<div class="pr-row eb-pur-row" data-pi="'+pi+'">'+
-      '<div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span></div>'+
+      '<div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買'+(ratio?'｜'+ratio:'')+'</span></div>'+
       '<div class="fg"><label>交易類型</label><select class="eb-pur-type" onchange="toggleEditPurchaseType(this)">'+
         '<option value="buy"'+(type==='buy'?' selected':'')+'>💰 一般購買</option>'+
         '<option value="exchange"'+(type==='exchange'?' selected':'')+'>🔄 交換課程</option>'+
@@ -2044,8 +2106,24 @@ function previewNumsInRow(inp) {
     var c=findByNum(n);
     return '<span class="pnum'+(c?'':' nf')+'">'+(c?esc(c.name):'#'+esc(n)+' 找不到')+'</span>';
   }).join('');
+  updateEditPurchaseRatio(inp.closest('.eb-pur-row'));
 }
 window.previewNumsInRow = previewNumsInRow;
+
+function updateEditPurchaseRatio(row) {
+  if(!row) return;
+  var type=row.querySelector('.eb-pur-type').value;
+  var label=row.querySelector('.pr-label');
+  var pi=parseInt(row.dataset.pi);
+  if(!label) return;
+  var ratio='';
+  if(type==='exchange'){
+    ratio=parseNums(row.querySelector('.eb-ex-in').value).length+'換'+parseNums(row.querySelector('.eb-ex-out').value).length;
+  } else if(type==='gift'){
+    ratio='收'+parseNums(row.querySelector('.eb-ex-in').value).length+'堂';
+  }
+  label.textContent='第'+(pi+1)+'筆購買'+(ratio?'｜'+ratio:'');
+}
 
 function toggleEditPurchaseType(sel) {
   var row=sel.closest('.eb-pur-row');
@@ -2057,6 +2135,7 @@ function toggleEditPurchaseType(sel) {
   if(buy) buy.style.display=type==='buy'?'block':'none';
   if(ex) ex.style.display=type==='buy'?'none':'block';
   if(out) out.style.display=type==='exchange'?'block':'none';
+  updateEditPurchaseRatio(row);
 }
 window.toggleEditPurchaseType = toggleEditPurchaseType;
 
@@ -2101,6 +2180,13 @@ function readEditPurchaseRow(row, old, pi) {
   }
   var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
   var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
+  var inNums=parseNums(inRaw);
+  var outNums=type==='exchange'?parseNums(outRaw):[];
+  var inStatus=row.querySelector('.eb-ex-in-status').value||'pending';
+  var outStatus=type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):'';
+  var oldEx=old.exchange||{};
+  var inReceivedNums=inStatus==='received'?inNums.slice():(Array.isArray(oldEx.inReceivedNums)?oldEx.inReceivedNums.filter(function(n){return inNums.indexOf(n)>=0;}):[]);
+  var outSentNums=outStatus==='sent'?outNums.slice():(Array.isArray(oldEx.outSentNums)?oldEx.outSentNums.filter(function(n){return outNums.indexOf(n)>=0;}):[]);
   return {
     id: old.id||Date.now()+pi,
     status: old.status||'paid',
@@ -2109,12 +2195,14 @@ function readEditPurchaseRow(row, old, pi) {
     sentNums: old.sentNums||[],
     exchange: {
       type: type,
-      inNums: parseNums(inRaw),
+      inNums: inNums,
       inCourse: inRaw,
-      inStatus: row.querySelector('.eb-ex-in-status').value||'pending',
-      outNums: type==='exchange'?parseNums(outRaw):[],
+      inStatus: inNums.length&&inReceivedNums.length===inNums.length?'received':'pending',
+      inReceivedNums: inReceivedNums,
+      outNums: outNums,
       outCourse: outRaw,
-      outStatus: type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):''
+      outStatus: type==='exchange'&&outNums.length&&outSentNums.length===outNums.length?'sent':outStatus,
+      outSentNums: outSentNums
     }
   };
 }
@@ -2186,9 +2274,11 @@ function saveAddPur() {
       inNums:inNums,
       inCourse:document.getElementById('ap-ex-in').value.trim(),
       inStatus:document.getElementById('ap-ex-in-status').value,
+      inReceivedNums:document.getElementById('ap-ex-in-status').value==='received'?inNums.slice():[],
       outNums:outNums,
       outCourse:document.getElementById('ap-ex-out').value.trim(),
-      outStatus:type==='exchange'?document.getElementById('ap-ex-out-status').value:''
+      outStatus:type==='exchange'?document.getElementById('ap-ex-out-status').value:'',
+      outSentNums:type==='exchange'&&document.getElementById('ap-ex-out-status').value==='sent'?outNums.slice():[]
     };
   }
   var buyers=lb().slice();
