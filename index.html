@@ -2080,8 +2080,6 @@ if(splitPurchaseRows){
   var toggleHtml='';
   if((mode==='pending' && buyerPayFilter==='completed') || (!needs && (summary.purchaseCount>1 || summary.courseCount>1 || summary.exchangeCount>0))){
     summaryHtml='<div class="hist-summary">共購買 '+summary.purchaseCount+' 次｜'+summary.courseCount+' 堂課'+(summary.exchangeCount?'｜交換 '+summary.exchangeCount+' 次':'')+'</div>';
-    bodyClass=' collapsed';
-    toggleHtml='<button class="hist-toggle" onclick="toggleHistory(this)">查看購買紀錄</button>';
   }
   return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">👤 '+esc(buyer.name)+stLabel+'</div><div class="buyer-btns"><button class="cbtn" data-bid="'+buyer.id+'" onclick="openEditBuyer(this)">✏️</button><button class="cbtn" data-bid="'+buyer.id+'" onclick="delBuyer(this)">🗑️</button></div></div>'+summaryHtml+toggleHtml+'<div class="hist-body'+bodyClass+'">'+pHtml+'</div>'+addPurBtn+'</div>';
 }
