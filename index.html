@@ -1772,18 +1772,23 @@ function exchangeHasPending(ex) {
 }
 
 function buyerNeedsPending(buyer) {
-  var result = false;
-  buyer.purchases.forEach(function(pur) {
-    if(pur.exchange) {
-      if(exchangeHasPending(pur.exchange)) result = true;
-    } else {
-      var sentNums = pur.sentNums || [];
-      (pur.nums || []).forEach(function(n) {
-        if(sentNums.indexOf(n) < 0) result = true;
-      });
-    }
-  });
-  return result;
+  return (buyer.purchases || []).some(function(pur){ return purchaseNeedsPending(pur); });
+}
+
+function purchaseNeedsPending(pur) {
+  if(!pur) return false;
+  if(pur.exchange) return exchangeHasPending(pur.exchange);
+  var sentNums = pur.sentNums || [];
+  return (pur.nums || []).some(function(n){ return sentNums.indexOf(n) < 0; });
+}
+
+function purchaseMatchesPendingFilter(pur) {
+  var needs = purchaseNeedsPending(pur);
+  if(buyerPayFilter === 'completed') return !needs;
+  if(!needs) return false;
+  if(buyerPayFilter === 'exchange') return !!(pur.exchange && pur.exchange.type === 'exchange');
+  if(buyerPayFilter === 'paid' || buyerPayFilter === 'pre') return !pur.exchange && (pur.status || 'paid') === buyerPayFilter;
+  return true;
 }
 
 function buyerHistorySummary(buyer) {
@@ -1838,7 +1843,7 @@ function renderPending() {
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
-    html+=renderBuyerCard(buyer);
+    html+=renderBuyerCard(buyer,'pending');
   });
   el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
@@ -1881,12 +1886,12 @@ function renderAllBuyers() {
     return matchName&&buyerMatchesGroup(b);
   });
   var el=document.getElementById('all-buyers-list');
-  html+=buyers.map(function(b){return renderBuyerCard(b);}).join('');
+  html+=buyers.map(function(b){return renderBuyerCard(b,'all');}).join('');
   el.innerHTML=html||'<div class="empty">📭 沒有符合的購買人</div>';
 }
 window.renderAllBuyers = renderAllBuyers;
 
-function renderBuyerCard(buyer) {
+function renderBuyerCard(buyer, mode) {
   var firstPur=buyer.purchases&&buyer.purchases[0];
   var firstType=firstPur&&firstPur.exchange?firstPur.exchange.type:'buy';
   var stLabel='';
@@ -1903,6 +1908,7 @@ function renderBuyerCard(buyer) {
   if(gid) stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(gid))+'</span>'+stLabel;
   var pHtml='';
   buyer.purchases.forEach(function(pur,pi){
+    if(mode==='pending' && !purchaseMatchesPendingFilter(pur)) return;
     var sentNums=pur.sentNums||[];
     var allNums=pur.nums||[];
     var purType=pur.exchange?pur.exchange.type:'buy';
@@ -2014,16 +2020,15 @@ if(pur.exchange){
     
 pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
   });
+  if(mode==='pending' && !pHtml) return '';
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
   var needs=buyerNeedsPending(buyer);
   var summary=buyerHistorySummary(buyer);
   var summaryHtml='';
   var bodyClass='';
   var toggleHtml='';
-  if(!needs && (summary.purchaseCount>1 || summary.courseCount>1 || summary.exchangeCount>0)){
-    var shown=summary.names.slice(0,3).map(esc).join('、');
-    var more=summary.names.length>3?' 等 '+summary.names.length+' 堂':'';
-    summaryHtml='<div class="hist-summary">共購買 '+summary.purchaseCount+' 次｜'+summary.courseCount+' 堂課'+(summary.exchangeCount?'｜交換 '+summary.exchangeCount+' 次':'')+(shown?'<br>'+shown+more:'')+'</div>';
+  if((mode==='pending' && buyerPayFilter==='completed') || (!needs && (summary.purchaseCount>1 || summary.courseCount>1 || summary.exchangeCount>0))){
+    summaryHtml='<div class="hist-summary">共購買 '+summary.purchaseCount+' 次｜'+summary.courseCount+' 堂課'+(summary.exchangeCount?'｜交換 '+summary.exchangeCount+' 次':'')+'</div>';
     bodyClass=' collapsed';
     toggleHtml='<button class="hist-toggle" onclick="toggleHistory(this)">查看購買紀錄</button>';
   }
