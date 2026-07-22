@@ -1621,16 +1621,22 @@ function toggleGroupSent(cb) {
 }
 window.toggleGroupSent = toggleGroupSent;
 
-function addEditGroupMember(member) {
+function addEditGroupMember(member, isJoin) {
   var box=document.getElementById('eg-members');
   if(!box) return;
   member=member||{};
   var row=document.createElement('div');
-  row.className='nbuyer-row';
+  row.className=isJoin?'nbuyer-row join-edit-row':'nbuyer-row';
   row.dataset.bid=member.id||'';
-  row.innerHTML='<input class="eg-member-name" type="text" placeholder="姓名／暱稱" value="'+esc(member.name||'')+'"/>'+
-    '<select class="eg-member-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>'+
-    '<button type="button" onclick="delEditGroupMember(this)">×</button>';
+  if(isJoin){
+    row.style.display='block';
+    row.innerHTML='<div class="fg" style="margin-bottom:10px;"><label>對方名稱</label><input class="eg-member-name" type="text" placeholder="對方名稱" value="'+esc(member.name||'')+'"/></div>'+
+      '<div class="fg" style="margin-bottom:0;"><label>我是否已付款</label><select class="eg-member-status"><option value="paid">✅ 我已付款</option><option value="pre">⏳ 我尚未付款</option></select></div>';
+  } else {
+    row.innerHTML='<input class="eg-member-name" type="text" placeholder="姓名／暱稱" value="'+esc(member.name||'')+'"/>'+
+      '<select class="eg-member-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>'+
+      '<button type="button" onclick="delEditGroupMember(this)">×</button>';
+  }
   box.appendChild(row);
   row.querySelector('.eg-member-status').value=member.status||'pre';
 }
@@ -1651,7 +1657,7 @@ function openEditGroup(btn) {
   mo.querySelector('h3').textContent=isJoin?'✏️ 編輯跟團':'✏️ 編輯團購';
   if(labels[0]) labels[0].textContent=isJoin?'開團群組名稱':'團購名稱 *';
   if(labels[1]) labels[1].textContent=isJoin?'跟團課程編號':'團購課程編號';
-  if(labels[3]) labels[3].textContent=isJoin?'對方名稱':'購買人';
+  if(labels[3]) labels[3].textContent=isJoin?'跟團資料':'購買人';
   var addBtn=mo.querySelector('#eg-members').nextElementSibling;
   if(addBtn){addBtn.style.display=isJoin?'none':'flex';addBtn.textContent=isJoin?'＋ 新增對方':'＋ 新增購買人';}
   document.getElementById('eg-id').value=gid;
@@ -1661,13 +1667,9 @@ function openEditGroup(btn) {
   previewNums('eg-nums','eg-preview');
   document.getElementById('eg-members').innerHTML='';
   groupMembers(gid).slice(0,isJoin?1:undefined).forEach(function(b){
-    addEditGroupMember({id:b.id,name:b.name,status:buyerPaymentStatus(b)});
+    addEditGroupMember({id:b.id,name:b.name,status:buyerPaymentStatus(b)},isJoin);
   });
-  if(!groupMembers(gid).length) addEditGroupMember();
-  if(isJoin){
-    var inp=mo.querySelector('.eg-member-name');
-    if(inp) inp.placeholder='對方名稱';
-  }
+  if(!groupMembers(gid).length) addEditGroupMember(null,isJoin);
   openMo('editGroupMo');
 }
 window.openEditGroup = openEditGroup;
