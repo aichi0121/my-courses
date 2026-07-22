@@ -324,7 +324,6 @@ button{touch-action:manipulation;}
   <div class="tc" id="tc-buyers">
     <div class="bsec-tabs">
       <button class="bstab on" onclick="goBTab('pending',this)">⏳ 待發送</button>
-      <button class="bstab" onclick="goBTab('join',this)">🗂 跟團</button>
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
@@ -333,14 +332,11 @@ button{touch-action:manipulation;}
         <button class="ftag" onclick="setBuyerPayFilter('paid',this)">✅ 已付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('pre',this)">⏳ 預約未付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('exchange',this)">🔄 交換</button>
+        <button class="ftag" onclick="setBuyerPayFilter('join',this)">🗂 跟團</button>
         <button class="ftag" onclick="setBuyerPayFilter('completed',this)">✅ 已完成</button>
       </div>
       <div class="sbar"><input id="pending-buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderPending()"/></div>
       <div id="pending-list"></div>
-    </div>
-    <div id="btc-join" style="display:none">
-      <div class="sbar"><input id="join-search" type="text" placeholder="🔍 搜尋對方或跟團名稱..." oninput="renderJoinList()"/></div>
-      <div id="join-list"></div>
     </div>
     <div id="btc-groups" style="display:none">
       <div class="card">
@@ -1311,12 +1307,10 @@ function goBTab(tab,btn) {
   document.querySelectorAll('.bstab').forEach(function(b){b.classList.remove('on');});
   if(btn) btn.classList.add('on');
   document.getElementById('btc-pending').style.display='none';
-  document.getElementById('btc-join').style.display='none';
   document.getElementById('btc-groups').style.display='none';
   document.getElementById('btc-all').style.display='none';
   document.getElementById('btc-new').style.display='none';
   if(tab==='pending'){document.getElementById('btc-pending').style.display='block';renderPending();}
-  else if(tab==='join'){document.getElementById('btc-join').style.display='block';renderJoinList();}
   else if(tab==='groups'){document.getElementById('btc-groups').style.display='block';renderBuyerGroups();}
   else if(tab==='all'){document.getElementById('btc-all').style.display='block';renderAllBuyers();}
   else if(tab==='new'){
@@ -1842,10 +1836,10 @@ function renderJoinCardFromBuyer(buyer) {
     '<div class="pr-row">'+renderJoinCourseRows(pur.nums||[],pur.sentNums||[])+noteHtml+'</div></div>';
 }
 
-function renderJoinList() {
-  var el=document.getElementById('join-list');
-  if(!el) return;
-  var q=(document.getElementById('join-search')&&document.getElementById('join-search').value||'').trim().toLowerCase();
+function renderJoinList(targetEl, query) {
+  var el=targetEl||document.getElementById('join-list');
+  if(!el) return '';
+  var q=typeof query==='string'?query:(document.getElementById('join-search')&&document.getElementById('join-search').value||'').trim().toLowerCase();
   var html='';
   lbg().filter(isJoinGroup).forEach(function(g){
     var member=joinMemberForGroup(String(g.id));
@@ -1857,7 +1851,9 @@ function renderJoinList() {
     if(q&&(b.name||'').toLowerCase().indexOf(q)<0) return;
     html+=renderJoinCardFromBuyer(b);
   });
-  el.innerHTML=html||'<div class="empty">📭 尚無跟團紀錄</div>';
+  var out=html||'<div class="empty">📭 尚無跟團紀錄</div>';
+  el.innerHTML=out;
+  return out;
 }
 window.renderJoinList = renderJoinList;
 
@@ -1960,6 +1956,15 @@ function renderPending() {
   var el=document.getElementById('pending-list');
   var q=(document.getElementById('pending-buyer-search')&&document.getElementById('pending-buyer-search').value||'').trim().toLowerCase();
   if(!buyers.length&&!lbg().length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
+  if(buyerPayFilter==='join'){
+    var search=document.getElementById('pending-buyer-search');
+    if(search) search.placeholder='🔍 搜尋對方或跟團名稱...';
+    renderJoinList(el,q);
+    return;
+  } else {
+    var search=document.getElementById('pending-buyer-search');
+    if(search) search.placeholder='🔍 搜尋購買人...';
+  }
   var html='';
   lbg().forEach(function(g){
     if(isJoinGroup(g)) return;
