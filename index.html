@@ -179,6 +179,47 @@ button{touch-action:manipulation;}
   .mbox{padding:16px;max-height:88vh;}
 }
 
+
+/* responsive polish pass */
+@media (min-width:900px){
+  .wrap,.hd{width:min(1040px,100%);}
+  #tc-buyers.on{max-width:900px;}
+  #tc-list.on .sbar,#tc-list.on .sort-row,#tc-list.on .cnt,#tc-list.on #list,#tc-list.on #fbar{max-width:860px;}
+  .buyer-card,.group-card,.cc{box-shadow:0 10px 28px rgba(34,48,71,.07);}
+}
+@media (min-width:1280px){.wrap,.hd{width:min(1080px,100%);}}
+.ci{grid-template-columns:auto 36px minmax(0,1fr) max-content;}
+.ci-name{min-width:0;}
+.ci-tag{justify-self:end;}
+#nb-buyers-wrap.is-hidden,#nb-payment-wrap.is-hidden{display:none!important;}
+@media (max-width:720px){
+  .wrap,.hd{width:100%;}
+  .tabs{grid-template-columns:repeat(5,72px);}
+  .ci{grid-template-columns:auto 30px minmax(0,1fr);}
+  .ci-tag{grid-column:3;justify-self:start;}
+}
+
+
+/* final stability fixes */
+.wrap,.hd{width:min(980px,100%)!important;}
+#tc-buyers.on,#tc-list.on{max-width:860px!important;margin:0 auto!important;}
+.card,.qcard,.buyer-card,.group-card,.cc{border-radius:8px!important;}
+.buyer-card,.group-card{margin-bottom:12px!important;}
+.pr-row{display:block!important;overflow:hidden;}
+.send-btn{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:42px!important;margin-top:9px!important;padding:10px 12px!important;border:none!important;border-radius:8px!important;font-size:.82rem!important;font-weight:850!important;line-height:1.35!important;text-align:center!important;white-space:normal!important;}
+.send-btn:disabled{opacity:1!important;}
+.ci{display:grid!important;grid-template-columns:20px 34px minmax(0,1fr) max-content!important;align-items:center!important;column-gap:8px!important;row-gap:4px!important;}
+.ci-cb{grid-column:1!important;}
+.ci-num{grid-column:2!important;width:auto!important;}
+.ci-name{grid-column:3!important;min-width:0!important;white-space:normal!important;line-height:1.35!important;}
+.ci-tag{grid-column:4!important;justify-self:end!important;}
+@media (max-width:720px){
+  .wrap,.hd,#tc-buyers.on,#tc-list.on{width:100%!important;max-width:100%!important;}
+  .ci{grid-template-columns:20px 30px minmax(0,1fr)!important;}
+  .ci-tag{grid-column:3!important;justify-self:start!important;}
+  .send-btn{font-size:.78rem!important;}
+}
+
 </style>
 </head>
 <body>
@@ -317,7 +358,7 @@ button{touch-action:manipulation;}
     <div id="btc-new" style="display:none">
       <div class="card">
         <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增購買人</h2>
-        <div class="fg"><label>購買人 *</label>
+        <div class="fg" id="nb-buyers-wrap"><label>購買人 *</label>
           <div id="nb-buyers"></div>
           <button class="add-pur-btn" type="button" onclick="addBuyerRow()">＋ 新增購買人</button>
           <div class="num-hint" id="nb-buyers-hint">每位購買人可單獨設定已付款或預約未付款</div>
@@ -1087,12 +1128,15 @@ window.addBuyerRow = addBuyerRow;
 
 function syncBuyerRowsForType() {
   var typeEl=document.getElementById('nb-type');
+  var modeEl=document.getElementById('nb-mode');
+  var mode=modeEl?modeEl.value:'single';
+  var isJoin=mode==='join';
   var isBuy=!typeEl||typeEl.value==='buy';
   document.querySelectorAll('#nb-buyers .nbuyer-row').forEach(function(row){
-    row.classList.toggle('no-pay',!isBuy);
+    row.classList.toggle('no-pay',!isBuy||isJoin);
   });
   var hint=document.getElementById('nb-buyers-hint');
-  if(hint) hint.textContent=isBuy?'每位購買人可單獨設定已付款或預約未付款':'交換／贈送不需要付款狀態';
+  if(hint) hint.textContent=isJoin?'跟團不需要填購買人或付款狀態':(isBuy?'每位購買人可單獨設定已付款或預約未付款':'交換／贈送不需要付款狀態');
 }
 window.syncBuyerRowsForType = syncBuyerRowsForType;
 
@@ -1151,21 +1195,27 @@ function getOrCreateBuyerGroup(name, nums, kind) {
 
 function toggleBuyerMode() {
   var mode=document.getElementById('nb-mode').value;
+  var isJoin=mode==='join';
   var wrap=document.getElementById('nb-group-name-wrap');
   var label=document.getElementById('nb-group-name-label');
+  var buyersWrap=document.getElementById('nb-buyers-wrap');
+  var payWrap=document.getElementById('nb-payment-wrap');
   if(wrap) wrap.style.display=(mode==='group'||mode==='join')?'block':'none';
-  if(label) label.textContent=mode==='join'?'跟團名稱 *':'團購名稱 *';
+  if(label) label.textContent=isJoin?'跟團名稱 *':'團購名稱 *';
+  if(buyersWrap) buyersWrap.classList.toggle('is-hidden',isJoin);
+  if(payWrap) payWrap.classList.toggle('is-hidden',isJoin);
+  syncBuyerRowsForType();
 }
 window.toggleBuyerMode = toggleBuyerMode;
 
 function addBuyer() {
-  var buyerEntries=getNewBuyerEntries();
-  if(!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
   var type=document.getElementById('nb-type').value;
   var mode=document.getElementById('nb-mode').value;
   var groupName=document.getElementById('nb-group-name').value.trim();
+  var buyerEntries=mode==='join'?[{name:groupName||'跟團',status:'paid'}]:getNewBuyerEntries();
+  if(mode!=='join'&&!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
   var groupId='';
   if(mode==='group'||mode==='join'){
     if(!groupName){toast(mode==='join'?'⚠️ 請輸入跟團名稱':'⚠️ 請輸入團購名稱');return;}
@@ -1219,7 +1269,7 @@ function addBuyer() {
   document.getElementById('nb-ex-in-preview').innerHTML='';
   document.getElementById('nb-ex-out').value='';
   document.getElementById('nb-ex-out-preview').innerHTML='';
-  toast('✅ 已新增 '+buyerEntries.length+' 位購買人！');
+  toast(mode==='join'?'✅ 已新增跟團紀錄！':'✅ 已新增 '+buyerEntries.length+' 位購買人！');
   goBTab('pending',document.querySelectorAll('.bstab')[0]);
 }
 window.addBuyer = addBuyer;
@@ -1919,7 +1969,7 @@ if(pur.exchange){
   var inNums=exchangeNums(ex,'in');
   var inRows=inNums.map(function(n){
     var c=findByNum(n);
-    var name=c?esc(c.name):esc(n||'—');
+    var name=c?esc(c.name):'#'+esc(n||'—')+' 找不到課程';
     var inDone=exchangeItemDone(ex,'in',n);
     return '<div class="ci">'+
       '<input type="checkbox" class="ci-cb"'+
@@ -1940,7 +1990,7 @@ if(pur.exchange){
     var outNums=exchangeNums(ex,'out');
     outRows=outNums.map(function(n){
       var outC=findByNum(n);
-      var outName=outC?esc(outC.name):esc(n||'—');
+      var outName=outC?esc(outC.name):'#'+esc(n||'—')+' 找不到課程';
       var outDone=exchangeItemDone(ex,'out',n);
       var outHasLink=outC&&hasLink(outC);
       return '<div class="ci">'+
@@ -2114,7 +2164,8 @@ function previewNumsInRow(inp) {
   var wrap=inp.closest('.fg');
   var prev=wrap?wrap.querySelector('.parsed-nums'):null;
   if(prev) prev.innerHTML=parseNums(inp.value).map(function(n){
-    return '<span class="pnum">'+esc(n)+'</span>';
+    var c=findByNum(n);
+    return '<span class="pnum'+(c?'':' nf')+'">'+(c?esc(c.name):'#'+esc(n)+' 找不到')+'</span>';
   }).join('');
 }
 window.previewNumsInRow = previewNumsInRow;
