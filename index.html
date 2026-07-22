@@ -146,7 +146,7 @@ button{touch-action:manipulation;}
 .group-member-name{font-size:.82rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nbuyer-row{display:grid;grid-template-columns:minmax(0,1fr) 144px 36px;gap:7px;align-items:center;margin-bottom:7px;}.nbuyer-row.no-pay{grid-template-columns:minmax(0,1fr) 36px;}.nbuyer-row.no-pay .nbuyer-status{display:none;}.nbuyer-row button{height:38px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--sub);cursor:pointer;font-size:.9rem;}
 .buyer-top{align-items:center;margin-bottom:9px;}.bst{display:inline-flex;align-items:center;margin-left:7px;background:#eef7ff;color:#226999;}.st-paid{background:#e6f8ee;color:#14794c;}.st-pre{background:#fff3d8;color:#a06108;}
-.pr-row{padding:10px 11px;margin-bottom:8px;}.pr-label{font-size:.76rem;font-weight:850;color:var(--sub);}.pr-done{background:#dff8ea;color:#14834f;}.pr-pend{background:#fff0cb;color:#a35c00;}
+.pr-row{padding:10px 11px;margin-bottom:8px;}.pr-label{font-size:.76rem;font-weight:850;color:var(--sub);}.pr-done{background:#dff8ea;color:#14834f;}.pr-pend{background:#fff0cb;color:#a35c00;}.pr-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:none;padding:0;cursor:pointer;text-align:left;}.pr-body{margin-top:8px;}.pr-body.collapsed{display:none;}
 .hist-summary{padding:10px 12px;margin-bottom:9px;font-size:.8rem;color:var(--sub);}.hist-toggle{margin-bottom:9px;}.hist-body.collapsed{display:none;}
 .ci{display:grid;grid-template-columns:auto 34px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);}.ci:last-child{border-bottom:none;}.ci-num{font-size:.76rem;font-weight:850;color:var(--accent);width:auto;}.ci-name{font-size:.82rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ci-sent{background:#dff8ea;color:#13834f;}.ci-ready{background:#e7efff;color:#245ad7;}.ci-nolink{background:#fff0f0;color:#c93434;}.ci-cb{width:17px;height:17px;cursor:pointer;accent-color:var(--accent);}
 .num-inp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}.parsed-nums{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}.pnum{padding:3px 8px;background:var(--accent-soft);color:var(--accent);border-radius:999px;font-size:.74rem;font-weight:850;}.pnum.nf{background:#fff3f3;color:#c53030;}
@@ -358,11 +358,6 @@ button{touch-action:manipulation;}
     <div id="btc-new" style="display:none">
       <div class="card">
         <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增購買人</h2>
-        <div class="fg" id="nb-buyers-wrap"><label>購買人 *</label>
-          <div id="nb-buyers"></div>
-          <button class="add-pur-btn" type="button" onclick="addBuyerRow()">＋ 新增購買人</button>
-          <div class="num-hint" id="nb-buyers-hint">每位購買人可單獨設定已付款或預約未付款</div>
-        </div>
         <div class="fg"><label>購買方式</label>
           <select id="nb-mode" onchange="toggleBuyerMode()">
             <option value="single">單買</option>
@@ -370,8 +365,14 @@ button{touch-action:manipulation;}
             <option value="join">跟團</option>
           </select>
         </div>
+        <div class="fg" id="nb-join-owner-wrap" style="display:none"><label>對方名稱 *</label><input id="nb-join-owner" type="text" placeholder="例：Willy、Mio、某位開團者"/></div>
+        <div class="fg" id="nb-buyers-wrap"><label>購買人 *</label>
+          <div id="nb-buyers"></div>
+          <button class="add-pur-btn" type="button" onclick="addBuyerRow()">＋ 新增購買人</button>
+          <div class="num-hint" id="nb-buyers-hint">每位購買人可單獨設定已付款或預約未付款</div>
+        </div>
         <div class="fg" id="nb-group-name-wrap" style="display:none"><label id="nb-group-name-label">團購名稱 *</label><input id="nb-group-name" type="text" placeholder="例：196、7月瑜伽團、我跟的某團"/></div>
-        <div class="fg"><label>交易類型</label>
+        <div class="fg" id="nb-type-wrap"><label>交易類型</label>
   <select id="nb-type" onchange="toggleExBox('nb')">
     <option value="buy">💰 一般購買</option>
     <option value="exchange">🔄 交換課程</option>
@@ -407,7 +408,7 @@ button{touch-action:manipulation;}
           <div class="parsed-nums" id="nb-preview"></div>
         </div>
         <div class="fg"><label>備註（選填）</label><textarea id="nb-note" placeholder="備註..."></textarea></div>
-        <button class="btn-g" onclick="addBuyer()">新增購買人</button>
+        <button class="btn-g" id="nb-submit" onclick="addBuyer()">新增購買人</button>
       </div>
     </div>
   </div>
@@ -1198,12 +1199,32 @@ function toggleBuyerMode() {
   var isJoin=mode==='join';
   var wrap=document.getElementById('nb-group-name-wrap');
   var label=document.getElementById('nb-group-name-label');
+  var groupInput=document.getElementById('nb-group-name');
+  var joinOwnerWrap=document.getElementById('nb-join-owner-wrap');
   var buyersWrap=document.getElementById('nb-buyers-wrap');
   var payWrap=document.getElementById('nb-payment-wrap');
-  if(wrap) wrap.style.display=(mode==='group'||mode==='join')?'block':'none';
-  if(label) label.textContent=isJoin?'跟團名稱 *':'團購名稱 *';
+  var typeWrap=document.getElementById('nb-type-wrap');
+  var exBox=document.getElementById('nb-exbox');
+  var courseIdWrap=document.getElementById('nb-courseid-wrap');
+  var submit=document.getElementById('nb-submit');
+  if(wrap) wrap.style.display=(mode==='group'||isJoin)?'block':'none';
+  if(label) label.textContent=isJoin?'開團群組名稱（選填）':'團購名稱 *';
+  if(groupInput) groupInput.placeholder=isJoin?'例：7月瑜伽團、某老師團（可不填）':'例：196、7月瑜伽團';
+  if(joinOwnerWrap) joinOwnerWrap.style.display=isJoin?'block':'none';
   if(buyersWrap) buyersWrap.classList.toggle('is-hidden',isJoin);
-  if(payWrap) payWrap.classList.toggle('is-hidden',isJoin);
+  if(typeWrap) typeWrap.style.display=isJoin?'none':'block';
+  if(payWrap){
+    payWrap.classList.toggle('is-hidden',false);
+    payWrap.style.display=isJoin?'block':'none';
+    var payLabel=payWrap.querySelector('label');
+    if(payLabel) payLabel.textContent=isJoin?'我是否已付款':'付款狀態';
+  }
+  if(courseIdWrap) courseIdWrap.style.display='block';
+  if(submit) submit.textContent=isJoin?'新增跟團紀錄':'新增購買人';
+  if(isJoin){
+    document.getElementById('nb-type').value='buy';
+    if(exBox) exBox.style.display='none';
+  }
   syncBuyerRowsForType();
 }
 window.toggleBuyerMode = toggleBuyerMode;
@@ -1211,20 +1232,25 @@ window.toggleBuyerMode = toggleBuyerMode;
 function addBuyer() {
   var raw=document.getElementById('nb-nums').value;
   var nums=parseNums(raw);
-  var type=document.getElementById('nb-type').value;
   var mode=document.getElementById('nb-mode').value;
+  var isJoin=mode==='join';
+  var type=isJoin?'buy':document.getElementById('nb-type').value;
   var groupName=document.getElementById('nb-group-name').value.trim();
-  var buyerEntries=mode==='join'?[{name:groupName||'跟團',status:'paid'}]:getNewBuyerEntries();
-  if(mode!=='join'&&!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
+  var joinOwner=(document.getElementById('nb-join-owner')&&document.getElementById('nb-join-owner').value||'').trim();
+  var status=document.getElementById('nb-status').value;
+  var buyerEntries=isJoin?[{name:joinOwner,status:status}]:getNewBuyerEntries();
+  if(isJoin&&!joinOwner){toast('⚠️ 請輸入對方名稱');return;}
+  if(!isJoin&&!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
   var groupId='';
-  if(mode==='group'||mode==='join'){
-    if(!groupName){toast(mode==='join'?'⚠️ 請輸入跟團名稱':'⚠️ 請輸入團購名稱');return;}
+  if(mode==='group'){
+    if(!groupName){toast('⚠️ 請輸入團購名稱');return;}
+    groupId=getOrCreateBuyerGroup(groupName,nums,mode);
+  } else if(isJoin&&groupName){
     groupId=getOrCreateBuyerGroup(groupName,nums,mode);
   }
   var group=findBuyerGroup(groupId);
   if(!nums.length&&type==='buy'&&group&&(group.nums||[]).length) nums=(group.nums||[]).slice();
   if(!nums.length && type !== 'exchange' && type !== 'gift'){toast('⚠️ 請輸入課程編號');return;}
-  var status=document.getElementById('nb-status').value;
   var note=document.getElementById('nb-note').value.trim();
   if((mode==='group'||mode==='join')&&groupId&&note){
     var groupsForNote=lbg().slice();
@@ -1252,11 +1278,12 @@ function addBuyer() {
   var baseId=Date.now();
   buyerEntries.slice().reverse().forEach(function(entry,idx){
     var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:purchaseNote,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
-    buyers.unshift({id:baseId+1000+idx,name:entry.name,groupId:groupId,purchases:purchases});
+    buyers.unshift({id:baseId+1000+idx,name:entry.name,groupId:groupId,mode:isJoin?'join':mode,purchases:purchases});
   });
   sb(buyers);
   resetBuyerRows();
   document.getElementById('nb-group-name').value='';
+  if(document.getElementById('nb-join-owner')) document.getElementById('nb-join-owner').value='';
   document.getElementById('nb-nums').value='';
   document.getElementById('nb-note').value='';
   document.getElementById('nb-preview').innerHTML='';
@@ -1825,6 +1852,13 @@ function toggleHistory(btn) {
 }
 window.toggleHistory = toggleHistory;
 
+function togglePurchaseRow(btn) {
+  var body=btn.parentNode.querySelector('.pr-body');
+  if(!body) return;
+  body.classList.toggle('collapsed');
+}
+window.togglePurchaseRow = togglePurchaseRow;
+
 function renderPending() {
   var buyers=lb();
   var el=document.getElementById('pending-list');
@@ -1911,7 +1945,13 @@ function renderBuyerCard(buyer, mode) {
     stLabel='<span class="bst" style="background:#ebf8ff;color:#2b6cb0;">📥 贈送</span>';
   }
   var gid=buyerGroupId(buyer);
-  if(gid) stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc(buyerGroupName(gid))+'</span>'+stLabel;
+  if(gid){
+    var bg=findBuyerGroup(gid);
+    stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 '+esc((bg?buyerGroupKindLabel(bg):'團購')+' '+buyerGroupName(gid))+'</span>'+stLabel;
+  } else if(buyer.mode==='join'){
+    stLabel='<span class="bst" style="background:#eef2ff;color:#4c51bf;">🗂 跟團</span>'+stLabel;
+  }
+  var splitPurchaseRows=mode==='pending'&&buyerPayFilter==='completed';
   var pHtml='';
   buyer.purchases.forEach(function(pur,pi){
     if(mode==='pending' && !purchaseMatchesPendingFilter(pur)) return;
@@ -2024,7 +2064,12 @@ if(pur.exchange){
 }
 
     
-pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+ciHtml+noteHtml+exHtml+sendBtnHtml+'</div>';
+var rowBody=ciHtml+noteHtml+exHtml+sendBtnHtml;
+if(splitPurchaseRows){
+  pHtml+='<div class="pr-row pr-fold"><button class="pr-toggle" onclick="togglePurchaseRow(this)"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</button><div class="pr-body collapsed">'+rowBody+'</div></div>';
+} else {
+  pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+rowBody+'</div>';
+}
   });
   if(mode==='pending' && !pHtml) return '';
   var addPurBtn='<button class="add-pur-btn" data-bid="'+buyer.id+'" onclick="openAddPur(this)">＋ 新增購買紀錄</button>';
