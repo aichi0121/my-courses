@@ -1958,6 +1958,12 @@ function renderBuyerCard(buyer, mode) {
     var sentNums=pur.sentNums||[];
     var allNums=pur.nums||[];
     var purType=pur.exchange?pur.exchange.type:'buy';
+    var purchaseTitle='第'+(pi+1)+'筆購買';
+    if(pur.exchange){
+      var inCount=exchangeNums(pur.exchange,'in').length;
+      var outCount=pur.exchange.type==='exchange'?exchangeNums(pur.exchange,'out').length:0;
+      purchaseTitle+='｜'+inCount+'換'+outCount;
+    }
     var statusLabel='';
     if(purType==='buy'){
       statusLabel=pur.status==='pre'?'<span class="pr-st pr-pend">⏳ 預約未付</span>':'<span class="pr-st pr-done">✅ 已付款</span>';
@@ -2066,9 +2072,9 @@ if(pur.exchange){
     
 var rowBody=ciHtml+noteHtml+exHtml+sendBtnHtml;
 if(splitPurchaseRows){
-  pHtml+='<div class="pr-row pr-fold"><button class="pr-toggle" onclick="togglePurchaseRow(this)"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</button><div class="pr-body collapsed">'+rowBody+'</div></div>';
+  pHtml+='<div class="pr-row pr-fold"><button class="pr-toggle" onclick="togglePurchaseRow(this)"><span class="pr-label">'+purchaseTitle+'</span>'+statusLabel+'</button><div class="pr-body collapsed">'+rowBody+'</div></div>';
 } else {
-  pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span>'+statusLabel+'</div>'+rowBody+'</div>';
+  pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">'+purchaseTitle+'</span>'+statusLabel+'</div>'+rowBody+'</div>';
 }
   });
   if(mode==='pending' && !pHtml) return '';
