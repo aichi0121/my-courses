@@ -2178,10 +2178,11 @@ if(pur.exchange){
 
     
 var rowBody=ciHtml+noteHtml+exHtml+sendBtnHtml;
+var editPurBtn='<button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="openEditBuyer(this)">✏️ 編輯</button>';
 if(splitPurchaseRows){
-  pHtml+='<div class="pr-row pr-fold"><button class="pr-toggle" onclick="togglePurchaseRow(this)"><span class="pr-label">'+purchaseTitle+'</span>'+statusLabel+'</button><div class="pr-body collapsed">'+rowBody+'</div></div>';
+  pHtml+='<div class="pr-row pr-fold"><div class="pr-top"><button class="pr-toggle" onclick="togglePurchaseRow(this)"><span class="pr-label">'+purchaseTitle+'</span>'+statusLabel+'</button>'+editPurBtn+'</div><div class="pr-body collapsed">'+rowBody+'</div></div>';
 } else {
-  pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">'+purchaseTitle+'</span>'+statusLabel+'</div>'+rowBody+'</div>';
+  pHtml+='<div class="pr-row"><div class="pr-top"><span class="pr-label">'+purchaseTitle+'</span><span>'+statusLabel+editPurBtn+'</span></div>'+rowBody+'</div>';
 }
   });
   if(mode==='pending' && !pHtml) return '';
@@ -2293,12 +2294,16 @@ function editExchangeText(nums, fallback) {
   return nums&&nums.length?nums.join(' '):(fallback||'');
 }
 
-function renderEditBuyerPurchases(buyer) {
+function renderEditBuyerPurchases(buyer, onlyPi) {
   var box=document.getElementById('eb-purchases');
   if(!box) return;
   var purchases=buyer.purchases||[];
+  box.dataset.onlyPi=Number.isInteger(onlyPi)?String(onlyPi):'';
   if(!purchases.length){box.innerHTML='<div class="qempty" style="padding:10px 0;">尚無購買紀錄</div>';return;}
-  box.innerHTML=purchases.map(function(pur,pi){
+  var purchasePairs=purchases.map(function(pur,pi){return {pur:pur,pi:pi};}).filter(function(item){return !Number.isInteger(onlyPi)||item.pi===onlyPi;});
+  if(!purchasePairs.length){box.innerHTML='<div class="qempty" style="padding:10px 0;">找不到這筆購買紀錄</div>';return;}
+  box.innerHTML=purchasePairs.map(function(item){
+    var pur=item.pur, pi=item.pi;
     var type=pur.exchange?pur.exchange.type:'buy';
     var ex=pur.exchange||{};
     var inText=editExchangeText(ex.inNums,ex.inCourse);
@@ -2352,15 +2357,62 @@ window.toggleEditPurchaseType = toggleEditPurchaseType;
 
 function openEditBuyer(btn) {
   var bid=parseInt(btn.dataset.bid);
+  var onlyPi=btn.dataset.pi!==undefined&&btn.dataset.pi!==''?parseInt(btn.dataset.pi,10):null;
   var b=lb().find(function(x){return x.id===bid;}); if(!b) return;
   refreshBuyerGroupSels();
+  document.querySelector('#editBuyerMo h3').textContent=Number.isInteger(onlyPi)?'✏️ 編輯第 '+(onlyPi+1)+' 筆購買':'✏️ 編輯購買人';
   document.getElementById('eb-id').value=b.id;
   document.getElementById('eb-name').value=b.name||'';
   document.getElementById('eb-group').value=buyerGroupId(b);
-  renderEditBuyerPurchases(b);
+  renderEditBuyerPurchases(b,onlyPi);
   openMo('editBuyerMo');
 }
 window.openEditBuyer = openEditBuyer;
+
+function buildEditPurchaseFromRow(row, old) {
+  var pi=parseInt(row.dataset.pi);
+  old=old||{};
+  var type=row.querySelector('.eb-pur-type').value;
+  var note=(row.querySelector('.eb-pur-note').value||'').trim();
+  if(type==='buy'){
+    var nums=parseNums(row.querySelector('.eb-pur-nums').value);
+    return {
+      id: old.id||Date.now()+pi,
+      status: row.querySelector('.eb-pur-status').value||'paid',
+      nums: nums,
+      note: note,
+      sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
+      exchange: null
+    };
+  }
+  var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
+  var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
+  var oldEx=old.exchange||{};
+  var inNums=parseNums(inRaw);
+  var outNums=type==='exchange'?parseNums(outRaw):[];
+  var inStatus=row.querySelector('.eb-ex-in-status').value||'pending';
+  var outStatus=type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):'';
+  var inReceivedNums=inStatus==='received'?inNums.slice():(Array.isArray(oldEx.inReceivedNums)?oldEx.inReceivedNums.filter(function(n){return inNums.indexOf(String(n))>=0;}):[]);
+  var outSentNums=outStatus==='sent'?outNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c);}):(Array.isArray(oldEx.outSentNums)?oldEx.outSentNums.filter(function(n){return outNums.indexOf(String(n))>=0;}):[]);
+  return {
+    id: old.id||Date.now()+pi,
+    status: old.status||'paid',
+    nums: [],
+    note: note,
+    sentNums: old.sentNums||[],
+    exchange: {
+      type: type,
+      inNums: inNums,
+      inCourse: inRaw,
+      inStatus: inNums.length&&inReceivedNums.length===inNums.length?'received':'pending',
+      inReceivedNums: inReceivedNums,
+      outNums: outNums,
+      outCourse: outRaw,
+      outStatus: type==='exchange'&&outNums.length&&outSentNums.length===outNums.length?'sent':outStatus,
+      outSentNums: outSentNums
+    }
+  };
+}
 
 function saveEditBuyer() {
   var id=parseInt(document.getElementById('eb-id').value);
@@ -2373,51 +2425,21 @@ function saveEditBuyer() {
   buyers[i].groupId=groupId;
   var oldPurchases=buyers[i].purchases||[];
   var rows=Array.from(document.querySelectorAll('#eb-purchases .eb-pur-row'));
-  var nextPurchases=rows.map(function(row){
-    var pi=parseInt(row.dataset.pi);
-    var old=oldPurchases[pi]||{};
-    var type=row.querySelector('.eb-pur-type').value;
-    var note=(row.querySelector('.eb-pur-note').value||'').trim();
-    if(type==='buy'){
-      var nums=parseNums(row.querySelector('.eb-pur-nums').value);
-      return {
-        id: old.id||Date.now()+pi,
-        status: row.querySelector('.eb-pur-status').value||'paid',
-        nums: nums,
-        note: note,
-        sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
-        exchange: null
-      };
-    }
-    var inRaw=(row.querySelector('.eb-ex-in').value||'').trim();
-    var outRaw=type==='exchange'?(row.querySelector('.eb-ex-out').value||'').trim():'';
-    var oldEx=old.exchange||{};
-    var inNums=parseNums(inRaw);
-    var outNums=type==='exchange'?parseNums(outRaw):[];
-    var inStatus=row.querySelector('.eb-ex-in-status').value||'pending';
-    var outStatus=type==='exchange'?(row.querySelector('.eb-ex-out-status').value||'pending'):'';
-    var inReceivedNums=inStatus==='received'?inNums.slice():(Array.isArray(oldEx.inReceivedNums)?oldEx.inReceivedNums.filter(function(n){return inNums.indexOf(String(n))>=0;}):[]);
-    var outSentNums=outStatus==='sent'?outNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c);}):(Array.isArray(oldEx.outSentNums)?oldEx.outSentNums.filter(function(n){return outNums.indexOf(String(n))>=0;}):[]);
-    return {
-      id: old.id||Date.now()+pi,
-      status: old.status||'paid',
-      nums: [],
-      note: note,
-      sentNums: old.sentNums||[],
-      exchange: {
-        type: type,
-        inNums: inNums,
-        inCourse: inRaw,
-        inStatus: inNums.length&&inReceivedNums.length===inNums.length?'received':'pending',
-        inReceivedNums: inReceivedNums,
-        outNums: outNums,
-        outCourse: outRaw,
-        outStatus: type==='exchange'&&outNums.length&&outSentNums.length===outNums.length?'sent':outStatus,
-        outSentNums: outSentNums
-      }
-    };
-  });
-  buyers[i].purchases=nextPurchases;
+  var onlyPiRaw=document.getElementById('eb-purchases').dataset.onlyPi;
+  if(onlyPiRaw!==''){
+    var onlyPi=parseInt(onlyPiRaw,10);
+    var nextPurchases=oldPurchases.slice();
+    rows.forEach(function(row){
+      var pi=parseInt(row.dataset.pi);
+      nextPurchases[pi]=buildEditPurchaseFromRow(row, oldPurchases[pi]||{});
+    });
+    buyers[i].purchases=nextPurchases.filter(Boolean);
+  } else {
+    buyers[i].purchases=rows.map(function(row){
+      var pi=parseInt(row.dataset.pi);
+      return buildEditPurchaseFromRow(row, oldPurchases[pi]||{});
+    });
+  }
   sb(buyers); closeMo('editBuyerMo');
   renderPending(); renderAllBuyers(); toast('✅ 已儲存！');
 }
