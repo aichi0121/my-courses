@@ -324,6 +324,7 @@ button{touch-action:manipulation;}
   <div class="tc" id="tc-buyers">
     <div class="bsec-tabs">
       <button class="bstab on" onclick="goBTab('pending',this)">⏳ 待發送</button>
+      <button class="bstab" onclick="goBTab('join',this)">🗂 跟團</button>
       <button class="bstab" onclick="goBTab('new',this)">➕ 新增</button>
     </div>
     <div id="btc-pending">
@@ -336,6 +337,10 @@ button{touch-action:manipulation;}
       </div>
       <div class="sbar"><input id="pending-buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderPending()"/></div>
       <div id="pending-list"></div>
+    </div>
+    <div id="btc-join" style="display:none">
+      <div class="sbar"><input id="join-search" type="text" placeholder="🔍 搜尋對方或跟團名稱..." oninput="renderJoinList()"/></div>
+      <div id="join-list"></div>
     </div>
     <div id="btc-groups" style="display:none">
       <div class="card">
@@ -566,9 +571,9 @@ function scat(d) { _cats = d; fbSet('cats', d); renderFbar(); refreshSels(); }
 function lgs() { return _gs; }
 function sgs(d) { _gs = d; fbSet('gs', d); }
 function lb() { return _buyers; }
-function sb(d) { _buyers = d; fbSet('buyers', d); renderBuyerGroups(); }
+function sb(d) { _buyers = d; fbSet('buyers', d); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
 function lbg() { return _buyerGroups; }
-function sbg(d) { _buyerGroups = d; fbSet('buyerGroups', d); refreshBuyerGroupSels(); renderBuyerGroups(); }
+function sbg(d) { _buyerGroups = d; fbSet('buyerGroups', d); refreshBuyerGroupSels(); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
 
 // ── 登入 / 登出 ──
 window.signInWithGoogle = async function() {
@@ -1306,10 +1311,12 @@ function goBTab(tab,btn) {
   document.querySelectorAll('.bstab').forEach(function(b){b.classList.remove('on');});
   if(btn) btn.classList.add('on');
   document.getElementById('btc-pending').style.display='none';
+  document.getElementById('btc-join').style.display='none';
   document.getElementById('btc-groups').style.display='none';
   document.getElementById('btc-all').style.display='none';
   document.getElementById('btc-new').style.display='none';
   if(tab==='pending'){document.getElementById('btc-pending').style.display='block';renderPending();}
+  else if(tab==='join'){document.getElementById('btc-join').style.display='block';renderJoinList();}
   else if(tab==='groups'){document.getElementById('btc-groups').style.display='block';renderBuyerGroups();}
   else if(tab==='all'){document.getElementById('btc-all').style.display='block';renderAllBuyers();}
   else if(tab==='new'){
@@ -1343,14 +1350,14 @@ function arrSame(a,b) {
 
 function refreshBuyerGroupSels() {
   var groups=lbg();
-  var opts='<option value="">單買</option>'+groups.map(function(g){
+  var opts='<option value="">單買</option>'+groups.filter(function(g){return (g.kind||'group')!=='join';}).map(function(g){
     return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
   }).join('');
   ['eb-group'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.innerHTML=opts;
   });
-  var filterOpts='<option value="all">全部</option><option value="">單買</option>'+groups.map(function(g){
+  var filterOpts='<option value="all">全部</option><option value="">單買</option>'+groups.filter(function(g){return (g.kind||'group')!=='join';}).map(function(g){
     return '<option value="'+g.id+'">'+esc(g.name)+'</option>';
   }).join('');
   ['all-group-filter'].forEach(function(id){
@@ -1440,6 +1447,21 @@ function renderGroupCourseRows(nums, sentNums, gid, withCheckbox) {
   }).join('');
 }
 
+function renderJoinCourseRows(nums, receivedNums) {
+  nums=nums||[]; receivedNums=receivedNums||[];
+  if(!nums.length) return '<div class="qempty" style="padding:10px 0;">尚未設定跟團課程</div>';
+  return nums.map(function(n){
+    var c=findByNum(n);
+    var received=receivedNums.indexOf(n)>=0;
+    var tag;
+    if(!c) tag='<span class="ci-tag ci-nolink">找不到課程</span>';
+    else if(!hasLink(c)) tag='<span class="ci-tag ci-nolink">⏳ 未開課</span>';
+    else if(received) tag='<span class="ci-tag ci-sent">✓ 已取得</span>';
+    else tag='<span class="ci-tag ci-ready">已開課</span>';
+    return '<div class="ci"><span></span><span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name):'#'+esc(n))+'</span>'+tag+'</div>';
+  }).join('');
+}
+
 function previewGroupNums(inp) {
   var card=inp.closest('.group-card');
   if(!card) return;
@@ -1453,7 +1475,7 @@ function renderBuyerGroups() {
   var el=document.getElementById('buyer-group-list');
   if(!el) return;
   refreshBuyerGroupSels();
-  var groups=lbg();
+  var groups=lbg().filter(function(g){return !isJoinGroup(g);});
   if(!groups.length){el.innerHTML='<div class="empty">尚無團購</div>';return;}
   el.innerHTML=groups.map(function(g){
     var st=buyerGroupStats(String(g.id));
@@ -1629,16 +1651,29 @@ function openEditGroup(btn) {
   var gid=String(btn.dataset.gid);
   var g=findBuyerGroup(gid);
   if(!g) return;
+  var isJoin=isJoinGroup(g);
+  var mo=document.getElementById('editGroupMo');
+  var labels=mo.querySelectorAll('.fg > label');
+  mo.querySelector('h3').textContent=isJoin?'✏️ 編輯跟團':'✏️ 編輯團購';
+  if(labels[0]) labels[0].textContent=isJoin?'開團群組名稱':'團購名稱 *';
+  if(labels[1]) labels[1].textContent=isJoin?'跟團課程編號':'團購課程編號';
+  if(labels[3]) labels[3].textContent=isJoin?'對方名稱':'購買人';
+  var addBtn=mo.querySelector('#eg-members').nextElementSibling;
+  if(addBtn){addBtn.style.display=isJoin?'none':'flex';addBtn.textContent=isJoin?'＋ 新增對方':'＋ 新增購買人';}
   document.getElementById('eg-id').value=gid;
   document.getElementById('eg-name').value=g.name||'';
   document.getElementById('eg-nums').value=(g.nums||[]).join(' ');
   document.getElementById('eg-note').value=buyerGroupNote(gid,g)||'';
   previewNums('eg-nums','eg-preview');
   document.getElementById('eg-members').innerHTML='';
-  groupMembers(gid).forEach(function(b){
+  groupMembers(gid).slice(0,isJoin?1:undefined).forEach(function(b){
     addEditGroupMember({id:b.id,name:b.name,status:buyerPaymentStatus(b)});
   });
   if(!groupMembers(gid).length) addEditGroupMember();
+  if(isJoin){
+    var inp=mo.querySelector('.eg-member-name');
+    if(inp) inp.placeholder='對方名稱';
+  }
   openMo('editGroupMo');
 }
 window.openEditGroup = openEditGroup;
@@ -1646,12 +1681,13 @@ window.openEditGroup = openEditGroup;
 function saveEditGroup() {
   var gid=String(document.getElementById('eg-id').value);
   var name=document.getElementById('eg-name').value.trim();
-  if(!name){toast('⚠️ 請輸入團購名稱');return;}
   var nums=parseNums(document.getElementById('eg-nums').value);
   var note=document.getElementById('eg-note').value.trim();
   var groups=lbg().slice();
   var g=groups.find(function(x){return String(x.id)===gid;});
   if(!g) return;
+  var isJoin=isJoinGroup(g);
+  if(!name){toast(isJoin?'⚠️ 請輸入開團群組名稱':'⚠️ 請輸入團購名稱');return;}
   var oldNums=(g.nums||[]).slice();
   g.name=name;
   g.note=note;
@@ -1666,18 +1702,20 @@ function saveEditGroup() {
       status: row.querySelector('.eg-member-status').value||'pre'
     };
   }).filter(function(x){return x.name;});
-  if(!rows.length){toast('⚠️ 至少保留一位購買人');return;}
+  if(isJoin) rows=rows.slice(0,1);
+  if(!rows.length){toast(isJoin?'⚠️ 請輸入對方名稱':'⚠️ 至少保留一位購買人');return;}
   var keepIds=rows.filter(function(r){return r.id;}).map(function(r){return r.id;});
   var buyers=lb().slice().filter(function(b){return buyerGroupId(b)!==gid||keepIds.indexOf(b.id)>=0;});
   var baseId=Date.now();
   rows.forEach(function(r,idx){
     var b=r.id?buyers.find(function(x){return x.id===r.id;}):null;
     if(!b){
-      b={id:baseId+idx+1000,name:r.name,groupId:gid,purchases:[]};
+      b={id:baseId+idx+1000,name:r.name,groupId:gid,mode:isJoin?'join':'group',purchases:[]};
       buyers.unshift(b);
     }
     b.name=r.name;
     b.groupId=gid;
+    b.mode=isJoin?'join':'group';
     var pur=firstBuyPurchase(b);
     if(!pur){
       pur={id:baseId+idx,status:r.status,nums:nums.slice(),note:note,sentNums:[],exchange:null};
@@ -1692,7 +1730,7 @@ function saveEditGroup() {
   });
   sb(buyers);
   closeMo('editGroupMo');
-  renderPending(); renderAllBuyers(); toast('✅ 團購已儲存');
+  renderPending(); renderJoinList(); renderAllBuyers(); toast(isJoin?'✅ 跟團已儲存':'✅ 團購已儲存');
 }
 window.saveEditGroup = saveEditGroup;
 
@@ -1722,16 +1760,22 @@ function renderPendingGroupCard(g) {
 
 function delBuyerGroup(btn) {
   var gid=String(btn.dataset.gid);
+  var group=findBuyerGroup(gid);
+  var isJoin=isJoinGroup(group);
   var count=lb().filter(function(b){return buyerGroupId(b)===gid;}).length;
-  if(count>0&&!confirm('這個團購有 '+count+' 位購買人，刪除後會改成單買。確定刪除？')) return;
+  if(count>0&&!confirm(isJoin?'刪除這筆跟團紀錄？':'這個團購有 '+count+' 位購買人，刪除後會改成單買。確定刪除？')) return;
   sbg(lbg().filter(function(g){return String(g.id)!==gid;}));
   if(count>0){
-    var buyers=lb().slice();
-    buyers.forEach(function(b){if(buyerGroupId(b)===gid)b.groupId='';});
-    sb(buyers);
+    if(isJoin){
+      sb(lb().slice().filter(function(b){return buyerGroupId(b)!==gid;}));
+    } else {
+      var buyers=lb().slice();
+      buyers.forEach(function(b){if(buyerGroupId(b)===gid)b.groupId='';});
+      sb(buyers);
+    }
   }
   if(buyerGroupFilter===gid) setBuyerGroupFilter('all');
-  renderPending(); renderAllBuyers(); toast('🗑️ 團購已刪除');
+  renderPending(); renderJoinList(); renderAllBuyers(); toast(isJoin?'🗑️ 跟團已刪除':'🗑️ 團購已刪除');
 }
 window.delBuyerGroup = delBuyerGroup;
 
@@ -1764,6 +1808,58 @@ function buyerHasCompletedPurchase(buyer) {
 function buyerGroupKindLabel(g) {
   return (g&&g.kind)==='join'?'跟團':'團購';
 }
+
+function isJoinGroup(g) {
+  return !!g && (g.kind || 'group') === 'join';
+}
+
+function joinMemberForGroup(gid) {
+  return groupMembers(gid)[0] || null;
+}
+
+function joinStatusLabel(status) {
+  return (status || 'paid') === 'pre' ? '⏳ 我尚未付款' : '✅ 我已付款';
+}
+
+function renderJoinCardFromGroup(g) {
+  var member=joinMemberForGroup(String(g.id));
+  var pur=member?firstBuyPurchase(member):null;
+  var status=pur?(pur.status||'paid'):'paid';
+  var note=buyerGroupNote(String(g.id),g);
+  var noteHtml=note?'<div style="font-size:.7rem;color:var(--sub);margin-top:4px;">備註：'+esc(note)+'</div>':'';
+  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">🗂 '+esc(g.name||'未命名跟團')+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">跟團</span></div>'+
+    '<div class="buyer-btns"><button class="cbtn" data-gid="'+g.id+'" onclick="openEditGroup(this)">✏️</button><button class="cbtn" data-gid="'+g.id+'" onclick="delBuyerGroup(this)">🗑️</button></div></div>'+
+    '<div class="group-meta" style="margin-bottom:7px;">對方：'+esc(member?member.name:'尚未設定')+'｜'+joinStatusLabel(status)+'</div>'+
+    '<div class="pr-row">'+renderJoinCourseRows(g.nums||[],g.sentNums||[])+noteHtml+'</div></div>';
+}
+
+function renderJoinCardFromBuyer(buyer) {
+  var pur=firstBuyPurchase(buyer) || {status:'paid',nums:[],sentNums:[]};
+  var noteHtml=pur.note?'<div style="font-size:.7rem;color:var(--sub);margin-top:4px;">備註：'+esc(pur.note)+'</div>':'';
+  return '<div class="buyer-card"><div class="buyer-top"><div class="buyer-name">👤 '+esc(buyer.name||'未命名對方')+'<span class="bst" style="background:#eef2ff;color:#4c51bf;">跟團</span></div>'+
+    '<div class="buyer-btns"><button class="cbtn" data-bid="'+buyer.id+'" onclick="openEditBuyer(this)">✏️</button><button class="cbtn" data-bid="'+buyer.id+'" onclick="delBuyer(this)">🗑️</button></div></div>'+
+    '<div class="group-meta" style="margin-bottom:7px;">對方：'+esc(buyer.name||'')+'｜'+joinStatusLabel(pur.status)+'</div>'+
+    '<div class="pr-row">'+renderJoinCourseRows(pur.nums||[],pur.sentNums||[])+noteHtml+'</div></div>';
+}
+
+function renderJoinList() {
+  var el=document.getElementById('join-list');
+  if(!el) return;
+  var q=(document.getElementById('join-search')&&document.getElementById('join-search').value||'').trim().toLowerCase();
+  var html='';
+  lbg().filter(isJoinGroup).forEach(function(g){
+    var member=joinMemberForGroup(String(g.id));
+    var hay=((g.name||'')+' '+(member?member.name:'')).toLowerCase();
+    if(q&&hay.indexOf(q)<0) return;
+    html+=renderJoinCardFromGroup(g);
+  });
+  lb().filter(function(b){return b.mode==='join'&&!buyerGroupId(b);}).forEach(function(b){
+    if(q&&(b.name||'').toLowerCase().indexOf(q)<0) return;
+    html+=renderJoinCardFromBuyer(b);
+  });
+  el.innerHTML=html||'<div class="empty">📭 尚無跟團紀錄</div>';
+}
+window.renderJoinList = renderJoinList;
 
 function sortNumsByCourseOrder(nums) {
   return (nums||[]).map(String).slice().sort(function(a,b){
@@ -1866,6 +1962,7 @@ function renderPending() {
   if(!buyers.length&&!lbg().length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
   var html='';
   lbg().forEach(function(g){
+    if(isJoinGroup(g)) return;
     if(q&&(g.name||'').toLowerCase().indexOf(q)<0&&!groupMembers(String(g.id)).some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;})) return;
     var needs=groupNeedsPending(g);
     if(buyerPayFilter==='completed'){
@@ -1875,6 +1972,7 @@ function renderPending() {
     html+=renderPendingGroupCard(g);
   });
   buyers.forEach(function(buyer){
+    if(buyer.mode==='join') return;
     if(q&&(buyer.name||'').toLowerCase().indexOf(q)<0&&(buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(q)<0) return;
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
@@ -1915,12 +2013,14 @@ function renderAllBuyers() {
   var q=(document.getElementById('buyer-search').value||'').trim().toLowerCase();
   var html='';
   lbg().forEach(function(g){
+    if(isJoinGroup(g)) return;
     if(buyerGroupFilter!== 'all' && buyerGroupFilter!==String(g.id)) return;
     var members=groupMembers(String(g.id));
     var match=!q||(g.name||'').toLowerCase().indexOf(q)>=0||members.some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;});
     if(match) html+=renderAllGroupCard(g);
   });
   var buyers=lb().filter(function(b){
+    if(b.mode==='join') return false;
     if(buyerGroupId(b)) return false;
     var matchName=!q||(b.name||'').toLowerCase().indexOf(q)>=0;
     return matchName&&buyerMatchesGroup(b);
