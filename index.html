@@ -147,7 +147,7 @@ button{touch-action:manipulation;}
 .nbuyer-row{display:grid;grid-template-columns:minmax(0,1fr) 144px 36px;gap:7px;align-items:center;margin-bottom:7px;}.nbuyer-row.no-pay{grid-template-columns:minmax(0,1fr) 36px;}.nbuyer-row.no-pay .nbuyer-status{display:none;}.nbuyer-row button{height:38px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--sub);cursor:pointer;font-size:.9rem;}
 .buyer-top{align-items:center;margin-bottom:9px;}.bst{display:inline-flex;align-items:center;margin-left:7px;background:#eef7ff;color:#226999;}.st-paid{background:#e6f8ee;color:#14794c;}.st-pre{background:#fff3d8;color:#a06108;}
 .pr-row{padding:10px 11px;margin-bottom:8px;}.pr-label{font-size:.76rem;font-weight:850;color:var(--sub);}.pr-done{background:#dff8ea;color:#14834f;}.pr-pend{background:#fff0cb;color:#a35c00;}
-.hist-summary{padding:10px 12px;margin-bottom:9px;font-size:.8rem;color:var(--sub);}.hist-toggle{margin-bottom:9px;}
+.hist-summary{padding:10px 12px;margin-bottom:9px;font-size:.8rem;color:var(--sub);}.hist-toggle{margin-bottom:9px;}.hist-body.collapsed{display:none;}
 .ci{display:grid;grid-template-columns:auto 34px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);}.ci:last-child{border-bottom:none;}.ci-num{font-size:.76rem;font-weight:850;color:var(--accent);width:auto;}.ci-name{font-size:.82rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ci-sent{background:#dff8ea;color:#13834f;}.ci-ready{background:#e7efff;color:#245ad7;}.ci-nolink{background:#fff0f0;color:#c93434;}.ci-cb{width:17px;height:17px;cursor:pointer;accent-color:var(--accent);}
 .num-inp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}.parsed-nums{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}.pnum{padding:3px 8px;background:var(--accent-soft);color:var(--accent);border-radius:999px;font-size:.74rem;font-weight:850;}.pnum.nf{background:#fff3f3;color:#c53030;}
 .yt-row,.sub-yt-row{display:grid;grid-template-columns:96px minmax(0,1fr) 32px;gap:7px;margin-bottom:7px;align-items:center;}.yt-row .lbl,.yt-row .url,.sub-row input{padding:9px;border:1.5px solid var(--border);border-radius:8px;background:#fff;min-width:0;}.yt-row .del,.sub-row .sub-del,.sub-yt-row .sub-yt-del{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--sub);}
@@ -1728,6 +1728,12 @@ function buyerHasExchange(buyer) {
   });
 }
 
+function buyerHasCompletedPurchase(buyer) {
+  return (buyer.purchases || []).some(function(pur) {
+    return !purchaseNeedsPending(pur);
+  });
+}
+
 function buyerGroupKindLabel(g) {
   return (g&&g.kind)==='join'?'跟團':'團購';
 }
@@ -1839,7 +1845,7 @@ function renderPending() {
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
     if(buyerPayFilter==='completed'){
-      if(needs) return;
+      if(!buyerHasCompletedPurchase(buyer)) return;
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
