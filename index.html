@@ -152,7 +152,7 @@ button{touch-action:manipulation;}
 .num-inp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}.parsed-nums{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}.pnum{padding:3px 8px;background:var(--accent-soft);color:var(--accent);border-radius:999px;font-size:.74rem;font-weight:850;}.pnum.nf{background:#fff3f3;color:#c53030;}
 .yt-row,.sub-yt-row{display:grid;grid-template-columns:96px minmax(0,1fr) 32px;gap:7px;margin-bottom:7px;align-items:center;}.yt-row .lbl,.yt-row .url,.sub-row input{padding:9px;border:1.5px solid var(--border);border-radius:8px;background:#fff;min-width:0;}.yt-row .del,.sub-row .sub-del,.sub-yt-row .sub-yt-del{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--sub);}
 .sub-row{padding:11px;margin-bottom:9px;}.sub-row .sub-top{display:flex;gap:7px;align-items:center;margin-bottom:7px;}.sub-row .sub-title{flex:1;}.sub-card{margin-top:9px;overflow:hidden;}.sub-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:none;padding:10px 11px;font-size:.84rem;font-weight:850;color:var(--text);text-align:left;cursor:pointer;}.sub-card-title span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.sub-card-arrow{font-size:.78rem;color:var(--sub);transition:transform .2s;}.sub-card-title.open .sub-card-arrow{transform:rotate(180deg);}.sub-card-body{padding:0 11px 11px;}.sub-card-body.collapsed{display:none;}.sub-actions .bcopy{flex:1;}
-.mo{display:none;position:fixed;inset:0;background:rgba(17,24,39,.48);z-index:100;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}.mo.open{display:flex;}.mbox{background:#fff;border-radius:10px;padding:20px;width:min(560px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(17,24,39,.28);border:1px solid var(--border);}.mbox h3{font-size:1.02rem;margin-bottom:14px;}.mcancel{flex:1;background:#f2f6fb;color:var(--sub);}.msave{flex:2;}
+.mo{display:none;position:fixed;inset:0;background:rgba(17,24,39,.48);z-index:100;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}.mo.open{display:flex;}.mbox{background:#fff;border-radius:10px;padding:20px;width:min(560px,100%);max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 24px 80px rgba(17,24,39,.28);border:1px solid var(--border);}.mbox h3{font-size:1.02rem;margin-bottom:14px;}.mcancel{flex:1;background:#f2f6fb;color:var(--sub);}.msave{flex:2;}body.modal-open{overflow:hidden;}
 .catli{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;margin-bottom:7px;background:var(--panel-soft);border:1px solid var(--border);}.catli span{flex:1;font-size:.88rem;}.catli button{background:none;border:none;cursor:pointer;font-size:1rem;padding:3px 6px;border-radius:6px;color:var(--sub);}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:#1f2b3f;color:#fff;padding:10px 18px;border-radius:999px;font-size:.84rem;font-weight:750;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow);}#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#223047,#139c95);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}#login-screen.hide{display:none;}.login-box{background:#fff;border-radius:12px;padding:34px 28px;text-align:center;max-width:360px;width:100%;box-shadow:var(--shadow);}.login-box h2{font-size:1.16rem;margin-bottom:7px;}.login-box p{font-size:.86rem;color:var(--sub);margin-bottom:24px;}.login-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:13px;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-size:.92rem;font-weight:850;cursor:pointer;color:var(--text);box-shadow:var(--shadow-sm);}.login-btn img{width:20px;height:20px;}
@@ -174,9 +174,14 @@ button{touch-action:manipulation;}
   .lr{grid-template-columns:auto minmax(0,1fr);}.lr .bcopy{grid-column:1 / -1;width:100%;}
   .yt-row,.sub-yt-row{grid-template-columns:1fr 32px;}.yt-row .lbl,.sub-yt-row .sub-yt-lbl{grid-column:1 / -1;width:100%;}
   .nbuyer-row{grid-template-columns:1fr;}.nbuyer-row.no-pay{grid-template-columns:1fr;}.nbuyer-row button{width:100%;}
+  #eg-members .nbuyer-row:not(.join-edit-row){grid-template-columns:minmax(0,1fr) minmax(112px,38%) 38px;gap:6px;}
+  #eg-members .nbuyer-row:not(.join-edit-row) input,
+  #eg-members .nbuyer-row:not(.join-edit-row) select{min-width:0;}
+  #eg-members .nbuyer-row:not(.join-edit-row) button{width:38px;padding:0;}
   .group-member-row{grid-template-columns:1fr;}.buyer-top,.group-top{align-items:flex-start;}.bst{margin-left:0;margin-top:5px;}.buyer-name{display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
   .pr-top{align-items:flex-start;}.ci{grid-template-columns:auto 28px minmax(0,1fr);}.ci-tag{grid-column:3 / 4;justify-self:start;margin-top:2px;}.send-btn{font-size:.78rem;}
-  .mbox{padding:16px;max-height:88vh;}
+  .mo{align-items:flex-start;padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));}
+  .mbox{padding:16px;max-height:calc(100vh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));}
 }
 
 
@@ -649,8 +654,21 @@ function sortArr(arr) {
   else if(mode==='name-asc') a.sort(function(p,q){return(p.name||'').localeCompare(q.name||'','zh-TW');});
   return a;
 }
-function openMo(id){document.getElementById(id).classList.add('open');}
-function closeMo(id){document.getElementById(id).classList.remove('open');}
+function openMo(id){
+  var mo=document.getElementById(id);
+  var box=mo&&mo.querySelector('.mbox');
+  if(!mo) return;
+  if(box) box.scrollTop=0;
+  mo.classList.add('open');
+  document.body.classList.add('modal-open');
+  requestAnimationFrame(function(){if(box) box.scrollTop=0;});
+}
+function closeMo(id){
+  var mo=document.getElementById(id);
+  if(!mo) return;
+  mo.classList.remove('open');
+  if(!document.querySelector('.mo.open')) document.body.classList.remove('modal-open');
+}
 window.closeMo = closeMo;
 
 function goTab(tab,btn) {
