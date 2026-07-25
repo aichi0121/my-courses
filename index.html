@@ -238,6 +238,23 @@ button{touch-action:manipulation;}
   .send-btn{font-size:.78rem!important;}
 }
 
+
+/* Completed purchase rows: compact, fixed controls */
+.completed-view .pr-fold>.pr-top{grid-template-columns:minmax(0,1fr) 62px;gap:6px;align-items:center;}
+.completed-view .pr-toggle{min-height:32px;gap:6px;overflow:hidden;}
+.completed-view .pr-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.completed-view .pr-toggle>span:last-child{flex:0 0 auto;gap:4px;}
+.completed-view .pr-st{font-size:.62rem;padding:2px 6px;}
+.completed-view .pr-caret{width:16px;height:16px;font-size:.78rem;}
+.completed-view .pr-fold>.pr-top>.cbtn{width:62px;min-width:62px;padding:5px 4px;font-size:.68rem;line-height:1.2;white-space:nowrap;align-self:center;}
+(max-width:720px){
+  .completed-view .sbar,.completed-view #pending-list{width:100%;}
+  .completed-view .pr-fold>.pr-top{grid-template-columns:minmax(0,1fr) 34px;gap:4px;}
+  .completed-view .pr-fold>.pr-top>.cbtn{width:34px;min-width:34px;padding:5px 2px;font-size:.78rem;}
+  .completed-view .pr-fold>.pr-top>.cbtn .edit-label{display:none;}
+  .completed-view .pr-st{font-size:.58rem;padding:2px 5px;}
+  .completed-view .pr-caret{width:14px;height:14px;}
+}
 </style>
 </head>
 <body>
@@ -2221,7 +2238,7 @@ if(pur.exchange){
 
     
 var rowBody=ciHtml+noteHtml+exHtml+sendBtnHtml;
-var editPurBtn='<button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="event.stopPropagation();openEditBuyer(this)">✏️ 編輯</button>';
+var editPurBtn='<button class="cbtn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="event.stopPropagation();openEditBuyer(this)">✏️ <span class="edit-label">編輯</span></button>';
 if(splitPurchaseRows){
   pHtml+='<div class="pr-row pr-fold"><div class="pr-top"><button class="pr-toggle" aria-expanded="false" onclick="togglePurchaseRow(this)"><span class="pr-label">'+purchaseTitle+'</span><span>'+statusLabel+'<span class="pr-caret" aria-hidden="true">⌄</span></span></button>'+editPurBtn+'</div><div class="pr-body collapsed">'+rowBody+'</div></div>';
 } else {
