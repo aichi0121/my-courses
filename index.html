@@ -109,6 +109,9 @@ button{touch-action:manipulation;}
 .cc{padding:14px;margin-bottom:10px;}
 .cc.nl{border-color:#f2b7b7;background:#fffafa;}
 .ctop,.buyer-top,.group-top,.pr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.pr-top{min-width:0;}
+.pr-top>span:last-child{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-shrink:0;}
+.pr-top .cbtn{white-space:nowrap;}
 .ctitle{font-size:.96rem;font-weight:850;color:var(--text);line-height:1.45;flex:1;}
 .cbtns,.buyer-btns{display:flex;gap:5px;flex-shrink:0;}
 .cbtn{background:#f6f9fc;border:1px solid transparent;font-size:1rem;cursor:pointer;padding:4px 7px;border-radius:7px;color:var(--sub);}
@@ -149,6 +152,14 @@ button{touch-action:manipulation;}
 .pr-row{padding:10px 11px;margin-bottom:8px;}.pr-label{font-size:.76rem;font-weight:850;color:var(--sub);}.pr-done{background:#dff8ea;color:#14834f;}.pr-pend{background:#fff0cb;color:#a35c00;}.pr-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:none;padding:0;cursor:pointer;text-align:left;}.pr-body{margin-top:8px;}.pr-body.collapsed{display:none;}
 .hist-summary{padding:10px 12px;margin-bottom:9px;font-size:.8rem;color:var(--sub);}.hist-toggle{margin-bottom:9px;}.hist-body.collapsed{display:none;}
 .ci{display:grid;grid-template-columns:auto 34px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);}.ci:last-child{border-bottom:none;}.ci-num{font-size:.76rem;font-weight:850;color:var(--accent);width:auto;}.ci-name{font-size:.82rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ci-sent{background:#dff8ea;color:#13834f;}.ci-ready{background:#e7efff;color:#245ad7;}.ci-nolink{background:#fff0f0;color:#c93434;}.ci-cb{width:17px;height:17px;cursor:pointer;accent-color:var(--accent);}
+.ci.ex-in{margin:3px 0;padding:9px 10px;border:1px solid #cfe3ff;border-radius:8px;background:#f3f8ff;}
+.ci.ex-in .ci-num{color:#2563c7;}
+.ci.ex-in .ci-cb{accent-color:#2563c7;}
+.ci.ex-in .ci-tag{background:#dcecff;color:#1859a8;}
+.ci.ex-out{margin:3px 0;padding:9px 10px;border:1px solid #f4d3ad;border-radius:8px;background:#fff8ef;}
+.ci.ex-out .ci-num{color:#b65f08;}
+.ci.ex-out .ci-cb{accent-color:#d97706;}
+.ci.ex-out .ci-tag{background:#ffead0;color:#a75005;}
 .num-inp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}.parsed-nums{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}.pnum{padding:3px 8px;background:var(--accent-soft);color:var(--accent);border-radius:999px;font-size:.74rem;font-weight:850;}.pnum.nf{background:#fff3f3;color:#c53030;}
 .yt-row,.sub-yt-row{display:grid;grid-template-columns:96px minmax(0,1fr) 32px;gap:7px;margin-bottom:7px;align-items:center;}.yt-row .lbl,.yt-row .url,.sub-row input{padding:9px;border:1.5px solid var(--border);border-radius:8px;background:#fff;min-width:0;}.yt-row .del,.sub-row .sub-del,.sub-yt-row .sub-yt-del{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--sub);}
 .sub-row{padding:11px;margin-bottom:9px;}.sub-row .sub-top{display:flex;gap:7px;align-items:center;margin-bottom:7px;}.sub-row .sub-title{flex:1;}.sub-card{margin-top:9px;overflow:hidden;}.sub-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:none;padding:10px 11px;font-size:.84rem;font-weight:850;color:var(--text);text-align:left;cursor:pointer;}.sub-card-title span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.sub-card-arrow{font-size:.78rem;color:var(--sub);transition:transform .2s;}.sub-card-title.open .sub-card-arrow{transform:rotate(180deg);}.sub-card-body{padding:0 11px 11px;}.sub-card-body.collapsed{display:none;}.sub-actions .bcopy{flex:1;}
@@ -338,6 +349,7 @@ button{touch-action:manipulation;}
         <button class="ftag" onclick="setBuyerPayFilter('pre',this)">⏳ 預約未付款</button>
         <button class="ftag" onclick="setBuyerPayFilter('exchange',this)">🔄 交換</button>
         <button class="ftag" onclick="setBuyerPayFilter('join',this)">🗂 跟團</button>
+        <button class="ftag" onclick="setBuyerPayFilter('group',this)">👥 團購</button>
         <button class="ftag" onclick="setBuyerPayFilter('completed',this)">✅ 已完成</button>
       </div>
       <div class="sbar"><input id="pending-buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderPending()"/></div>
@@ -1435,12 +1447,12 @@ function groupNeedsPending(g) {
   return nums.some(function(n){return sentNums.indexOf(n)<0;});
 }
 
+function groupIsCompleted(g) {
+  return !!((g.nums||[]).length&&!groupNeedsPending(g));
+}
+
 function groupMatchesPaymentFilter(g) {
-  if(buyerPayFilter==='all') return true;
-  if(buyerPayFilter==='completed') return true;
-  if(buyerPayFilter==='exchange') return false;
-  var buyers=lb().filter(function(b){return buyerGroupId(b)===String(g.id);});
-  return buyers.some(function(b){return buyerHasPaymentStatus(b,buyerPayFilter);});
+  return buyerPayFilter==='group'||buyerPayFilter==='completed';
 }
 
 function renderGroupCourseRows(nums, sentNums, gid, withCheckbox) {
@@ -1757,7 +1769,9 @@ function renderPendingGroupCard(g) {
   var pendingWithLink=nums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
   var pendingNoLink=nums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&sentNums.indexOf(n)<0;});
   var btn='';
-  if(st.pre>0&&pendingWithLink.length>0){
+  if(!nums.length){
+    btn='<button class="send-btn" style="background:#718096;cursor:default;" disabled>尚未設定團購課程</button>';
+  } else if(st.pre>0&&pendingWithLink.length>0){
     btn='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 尚有 '+st.pre+' 位預約未付款</button>';
   } else if(pendingWithLink.length>0){
     var hint=pendingNoLink.length>0?' (另有 '+pendingNoLink.length+' 堂未開課)':'';
@@ -1981,21 +1995,26 @@ function renderPending() {
     if(search) search.placeholder='🔍 搜尋對方或跟團名稱...';
     renderJoinList(el,q);
     return;
+  } else if(buyerPayFilter==='group'){
+    var search=document.getElementById('pending-buyer-search');
+    if(search) search.placeholder='🔍 搜尋團購或購買人...';
   } else {
     var search=document.getElementById('pending-buyer-search');
     if(search) search.placeholder='🔍 搜尋購買人...';
   }
   var html='';
-  lbg().forEach(function(g){
-    if(isJoinGroup(g)) return;
-    if(q&&(g.name||'').toLowerCase().indexOf(q)<0&&!groupMembers(String(g.id)).some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;})) return;
-    var needs=groupNeedsPending(g);
-    if(buyerPayFilter==='completed'){
-      if(needs) return;
-    } else if(!needs) return;
-    if(!groupMatchesPaymentFilter(g)) return;
-    html+=renderPendingGroupCard(g);
-  });
+  if(buyerPayFilter==='group'||buyerPayFilter==='completed'){
+    lbg().forEach(function(g){
+      if(isJoinGroup(g)) return;
+      if(q&&(g.name||'').toLowerCase().indexOf(q)<0&&!groupMembers(String(g.id)).some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;})) return;
+      var completed=groupIsCompleted(g);
+      if(buyerPayFilter==='completed'){
+        if(!completed) return;
+      } else if(completed) return;
+      if(!groupMatchesPaymentFilter(g)) return;
+      html+=renderPendingGroupCard(g);
+    });
+  }
   buyers.forEach(function(buyer){
     if(buyer.mode==='join') return;
     if(q&&(buyer.name||'').toLowerCase().indexOf(q)<0&&(buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(q)<0) return;
@@ -2154,7 +2173,7 @@ if(pur.exchange){
     var c=findByNum(n);
     var name=c?esc(c.name):'#'+esc(n||'—')+' 找不到課程';
     var inDone=exchangeItemDone(ex,'in',n);
-    return '<div class="ci">'+
+    return '<div class="ci ex-in">'+
       '<input type="checkbox" class="ci-cb"'+
         (inDone?' checked':'')+
         ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="in" data-num="'+esc(n)+'"'+
@@ -2176,7 +2195,7 @@ if(pur.exchange){
       var outName=outC?esc(outC.name):'#'+esc(n||'—')+' 找不到課程';
       var outDone=exchangeItemDone(ex,'out',n);
       var outHasLink=outC&&hasLink(outC);
-      return '<div class="ci">'+
+      return '<div class="ci ex-out">'+
         '<input type="checkbox" class="ci-cb"'+
           (outDone?' checked':'')+
           ' data-bid="'+buyer.id+'" data-pi="'+pi+'" data-exdir="out" data-num="'+esc(n)+'"'+
