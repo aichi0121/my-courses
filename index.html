@@ -116,6 +116,8 @@ button{touch-action:manipulation;}
 .cbtns,.buyer-btns{display:flex;gap:5px;flex-shrink:0;}
 .cbtn{background:#f6f9fc;border:1px solid transparent;font-size:1rem;cursor:pointer;padding:4px 7px;border-radius:7px;color:var(--sub);}
 .cbtn:hover{background:var(--accent-soft);border-color:#d8e0ff;color:var(--accent);}
+.cbtn.danger{color:#c53030;background:#fff5f5;}
+.cbtn.danger:hover{background:#ffe8e8;border-color:#fecaca;color:#b91c1c;}
 .lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;margin-bottom:7px;}
 .badge,.bst,.pr-st,.ci-tag{font-size:.68rem;font-weight:850;padding:3px 8px;border-radius:999px;white-space:nowrap;}
 .byt{background:#fff1f1;color:#d83838;}.bcl{background:#e7f7ff;color:#2274a5;}.bnt{background:#e9fbf0;color:#1b7e51;}.bnl{background:#fff5f5;color:#c53030;border:1px solid #fed7d7;margin-bottom:7px;display:inline-flex;}
@@ -457,6 +459,9 @@ button{touch-action:manipulation;}
           <div class="num-hint">用空格、頓號或逗號分隔</div>
           <div class="parsed-nums" id="nb-preview"></div>
         </div>
+        <div class="fg" id="nb-send-wrap"><label>發送狀態</label>
+          <select id="nb-send-status"><option value="pending">⏳ 待發</option><option value="sent">✅ 已發</option></select>
+        </div>
         <div class="fg"><label>備註（選填）</label><textarea id="nb-note" placeholder="備註..."></textarea></div>
         <button class="btn-g" id="nb-submit" onclick="addBuyer()">新增購買人</button>
       </div>
@@ -552,6 +557,9 @@ button{touch-action:manipulation;}
     <input class="num-inp" id="ap-nums" type="text" placeholder="例：80 30 33" oninput="previewNums('ap-nums','ap-preview')"/>
     <div class="num-hint">用空格、頓號或逗號分隔</div>
     <div class="parsed-nums" id="ap-preview"></div>
+  </div>
+  <div class="fg" id="ap-send-wrap"><label>發送狀態</label>
+    <select id="ap-send-status"><option value="pending">⏳ 待發</option><option value="sent">✅ 已發</option></select>
   </div>
   <div class="fg"><label>備註（選填）</label><textarea id="ap-note" placeholder="備註..."></textarea></div>
   <div class="macts">
@@ -1269,6 +1277,7 @@ function toggleBuyerMode() {
   var typeWrap=document.getElementById('nb-type-wrap');
   var exBox=document.getElementById('nb-exbox');
   var courseIdWrap=document.getElementById('nb-courseid-wrap');
+  var sendWrap=document.getElementById('nb-send-wrap');
   var submit=document.getElementById('nb-submit');
   if(wrap) wrap.style.display=(mode==='group'||isJoin)?'block':'none';
   if(label) label.textContent=isJoin?'開團群組名稱（選填）':'團購名稱 *';
@@ -1283,6 +1292,7 @@ function toggleBuyerMode() {
     if(payLabel) payLabel.textContent=isJoin?'我是否已付款':'付款狀態';
   }
   if(courseIdWrap) courseIdWrap.style.display='block';
+  if(sendWrap) sendWrap.style.display=isJoin?'none':(document.getElementById('nb-type').value==='buy'?'block':'none');
   if(submit) submit.textContent=isJoin?'新增跟團紀錄':'新增購買人';
   if(isJoin){
     document.getElementById('nb-type').value='buy';
@@ -1301,6 +1311,7 @@ function addBuyer() {
   var groupName=document.getElementById('nb-group-name').value.trim();
   var joinOwner=(document.getElementById('nb-join-owner')&&document.getElementById('nb-join-owner').value||'').trim();
   var status=document.getElementById('nb-status').value;
+  var sendStatus=document.getElementById('nb-send-status').value||'pending';
   var buyerEntries=isJoin?[{name:joinOwner,status:status}]:getNewBuyerEntries();
   if(isJoin&&!joinOwner){toast('⚠️ 請輸入對方名稱');return;}
   if(!isJoin&&!buyerEntries.length){toast('⚠️ 請輸入姓名');return;}
@@ -1340,9 +1351,17 @@ function addBuyer() {
   var buyers=lb().slice();
   var baseId=Date.now();
   buyerEntries.slice().reverse().forEach(function(entry,idx){
-    var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:purchaseNote,sentNums:[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
+    var purchases=[{id:baseId+idx,status:entry.status||status,nums:nums.slice(),note:purchaseNote,sentNums:type==='buy'&&sendStatus==='sent'?nums.slice():[],exchange:exchange?JSON.parse(JSON.stringify(exchange)):null}];
     buyers.unshift({id:baseId+1000+idx,name:entry.name,groupId:groupId,mode:isJoin?'join':mode,purchases:purchases});
   });
+  if(mode==='group'&&groupId&&type==='buy'&&sendStatus==='sent'){
+    var groups=lbg().slice();
+    var sentGroup=groups.find(function(g){return String(g.id)===String(groupId);});
+    if(sentGroup){
+      sentGroup.sentNums=nums.slice();
+      sbg(groups);
+    }
+  }
   sb(buyers);
   resetBuyerRows();
   document.getElementById('nb-group-name').value='';
@@ -1351,6 +1370,7 @@ function addBuyer() {
   document.getElementById('nb-note').value='';
   document.getElementById('nb-preview').innerHTML='';
   document.getElementById('nb-status').value='paid';
+  document.getElementById('nb-send-status').value='pending';
   document.getElementById('nb-mode').value='single';
   toggleBuyerMode();
   document.getElementById('nb-type').value='buy';
@@ -2384,8 +2404,11 @@ function renderEditBuyerPurchases(buyer, onlyPi) {
     var buyDisplay=type==='buy'?'block':'none';
     var exDisplay=type==='buy'?'none':'block';
     var outDisplay=type==='exchange'?'block':'none';
+    var oldSent=(pur.sentNums||[]).filter(function(n){return (pur.nums||[]).indexOf(n)>=0;});
+    var sendStatus=(pur.nums||[]).length&&oldSent.length===(pur.nums||[]).length?'sent':'pending';
+    var partialSent=oldSent.length>0&&oldSent.length<(pur.nums||[]).length;
     return '<div class="pr-row eb-pur-row" data-pi="'+pi+'">'+
-      '<div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span></div>'+
+      '<div class="pr-top"><span class="pr-label">第'+(pi+1)+'筆購買</span><button type="button" class="cbtn danger" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="deleteBuyerPurchase(this)">🗑️ 移除此筆</button></div>'+
       '<div class="fg"><label>交易類型</label><select class="eb-pur-type" onchange="toggleEditPurchaseType(this)">'+
         '<option value="buy"'+(type==='buy'?' selected':'')+'>💰 一般購買</option>'+
         '<option value="exchange"'+(type==='exchange'?' selected':'')+'>🔄 交換課程</option>'+
@@ -2394,6 +2417,7 @@ function renderEditBuyerPurchases(buyer, onlyPi) {
       '<div class="eb-pur-buy-wrap" style="display:'+buyDisplay+'">'+
         '<div class="fg"><label>付款狀態</label><select class="eb-pur-status"><option value="paid"'+((pur.status||'paid')==='paid'?' selected':'')+'>✅ 已付款</option><option value="pre"'+((pur.status||'paid')==='pre'?' selected':'')+'>⏳ 預約未付款</option></select></div>'+
         '<div class="fg"><label>購買課程編號</label><input class="num-inp eb-pur-nums" type="text" value="'+esc((pur.nums||[]).join(' '))+'" placeholder="例：80 30 33" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div></div>'+
+        '<div class="fg"><label>發送狀態</label><select class="eb-pur-send" data-partial="'+(partialSent?'1':'0')+'" onchange="this.dataset.touched=\'1\'"><option value="pending"'+(sendStatus==='pending'?' selected':'')+'>⏳ 待發'+(partialSent?'（已勾選 '+oldSent.length+' 堂）':'')+'</option><option value="sent"'+(sendStatus==='sent'?' selected':'')+'>✅ 已發</option></select></div>'+
       '</div>'+
       '<div class="eb-pur-ex-wrap" style="display:'+exDisplay+'">'+
         '<div class="fg"><label>對方給我的課程名稱</label><input class="num-inp eb-ex-in" type="text" value="'+esc(inText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-in-status" style="margin-top:5px;"><option value="pending"'+((ex.inStatus||'pending')==='pending'?' selected':'')+'>⏳ 未開課／待收</option><option value="received"'+(ex.inStatus==='received'?' selected':'')+'>✅ 已收到</option></select></div>'+
@@ -2449,12 +2473,16 @@ function buildEditPurchaseFromRow(row, old) {
   var note=(row.querySelector('.eb-pur-note').value||'').trim();
   if(type==='buy'){
     var nums=parseNums(row.querySelector('.eb-pur-nums').value);
+    var sendSel=row.querySelector('.eb-pur-send');
+    var sentNums=sendSel&&sendSel.value==='sent'
+      ?nums.slice()
+      :(sendSel&&sendSel.dataset.touched==='1'?[]:(old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}));
     return {
       id: old.id||Date.now()+pi,
       status: row.querySelector('.eb-pur-status').value||'paid',
       nums: nums,
       note: note,
-      sentNums: (old.sentNums||[]).filter(function(n){return nums.indexOf(n)>=0;}),
+      sentNums: sentNums,
       exchange: null
     };
   }
@@ -2518,6 +2546,21 @@ function saveEditBuyer() {
 }
 window.saveEditBuyer = saveEditBuyer;
 
+function deleteBuyerPurchase(btn) {
+  var bid=parseInt(btn.dataset.bid,10);
+  var pi=parseInt(btn.dataset.pi,10);
+  var buyers=lb().slice();
+  var buyer=buyers.find(function(x){return x.id===bid;});
+  if(!buyer||!buyer.purchases||!buyer.purchases[pi]) return;
+  if(!confirm('只移除第 '+(pi+1)+' 筆購買紀錄？購買人與其他紀錄會保留。')) return;
+  buyer.purchases.splice(pi,1);
+  sb(buyers);
+  closeMo('editBuyerMo');
+  renderPending(); renderAllBuyers();
+  toast('🗑️ 已移除此筆購買紀錄');
+}
+window.deleteBuyerPurchase = deleteBuyerPurchase;
+
 function delBuyer(btn) {
   var bid=parseInt(btn.dataset.bid);
   if(!confirm('確定刪除此購買人？')) return;
@@ -2533,6 +2576,7 @@ function openAddPur(btn) {
   document.getElementById('ap-preview').innerHTML='';
   document.getElementById('ap-note').value='';
   document.getElementById('ap-status').value='paid';
+  document.getElementById('ap-send-status').value='pending';
   document.getElementById('ap-type').value='buy';        // ← 加這行
   document.getElementById('ap-ex-in').value='';          // ← 加這行
   document.getElementById('ap-ex-out').value='';         // ← 加這行
@@ -2549,6 +2593,7 @@ function saveAddPur() {
   var type=document.getElementById('ap-type').value;
   if(!nums.length && type !== 'exchange' && type !== 'gift'){toast('⚠️ 請輸入課程編號！');return;}
   var status=document.getElementById('ap-status').value;
+  var sendStatus=document.getElementById('ap-send-status').value||'pending';
   var note=document.getElementById('ap-note').value.trim();
   var exchange=null;
   if(type==='exchange'||type==='gift'){
@@ -2569,7 +2614,7 @@ function saveAddPur() {
   var buyers=lb().slice();
   var b=buyers.find(function(x){return x.id===bid;});
   if(!b) return;
-  b.purchases.push({id:Date.now(),status:status,nums:nums,note:note,sentNums:[],exchange:exchange});
+  b.purchases.push({id:Date.now(),status:status,nums:nums,note:note,sentNums:type==='buy'&&sendStatus==='sent'?nums.slice():[],exchange:exchange});
   sb(buyers);
   closeMo('addPurMo');
   renderPending(); renderAllBuyers(); toast('✅ 購買紀錄已新增！');
@@ -2583,21 +2628,25 @@ function toggleExBox(prefix) {
   var outWrap = document.getElementById(prefix+'-ex-out-wrap');
   var paymentWrap = document.getElementById(prefix+'-payment-wrap');
   var courseIdWrap = document.getElementById(prefix+'-courseid-wrap');
+  var sendWrap = document.getElementById(prefix+'-send-wrap');
 
   if(type === 'buy') {
     box.style.display = 'none';
     if(paymentWrap) paymentWrap.style.display = prefix==='nb'?'none':'block';
     if(courseIdWrap) courseIdWrap.style.display = 'block';
+    if(sendWrap) sendWrap.style.display = 'block';
   } else if(type === 'exchange') {
     box.style.display = 'block';
     outWrap.style.display = 'block';
     if(paymentWrap) paymentWrap.style.display = 'none';
     if(courseIdWrap) courseIdWrap.style.display = 'none';
+    if(sendWrap) sendWrap.style.display = 'none';
   } else if(type === 'gift') {
     box.style.display = 'block';
     outWrap.style.display = 'none';
     if(paymentWrap) paymentWrap.style.display = 'none';
     if(courseIdWrap) courseIdWrap.style.display = 'none';
+    if(sendWrap) sendWrap.style.display = 'none';
   }
   if(prefix==='nb') syncBuyerRowsForType();
 }
