@@ -397,7 +397,7 @@ button{touch-action:manipulation;}
         <button class="ftag" onclick="setBuyerPayFilter('group',this)">👥 團購</button>
         <button class="ftag" onclick="setBuyerPayFilter('completed',this)">✅ 已完成</button>
       </div>
-      <div class="sbar"><input id="pending-buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderPending()"/></div>
+      <div class="sbar"><input id="pending-buyer-search" type="text" placeholder="🔍 搜尋購買人、課程編號或名稱..." aria-label="搜尋購買人、課程編號或課程名稱" oninput="renderPending()"/></div>
       <div id="pending-list"></div>
     </div>
     <div id="btc-groups" style="display:none">
@@ -415,7 +415,7 @@ button{touch-action:manipulation;}
         <label>團購：</label>
         <select id="all-group-filter" onchange="setBuyerGroupFilter(this.value)"></select>
       </div>
-      <div class="sbar"><input id="buyer-search" type="text" placeholder="🔍 搜尋購買人..." oninput="renderAllBuyers()"/></div>
+      <div class="sbar"><input id="buyer-search" type="text" placeholder="🔍 搜尋購買人、課程編號或名稱..." oninput="renderAllBuyers()"/></div>
       <div id="all-buyers-list"></div>
     </div>
     <div id="btc-new" style="display:none">
@@ -2014,6 +2014,53 @@ function purchaseMatchesPendingFilter(pur) {
   return true;
 }
 
+function courseNumMatchesQuery(num, query) {
+  var q=(query||'').trim().toLowerCase();
+  var n=String(num||'').trim();
+  if(!q||!n) return false;
+  if(/^\#?\d+$/.test(q)){
+    return parseInt(q.replace('#',''),10)===parseInt(n,10);
+  }
+  var c=findByNum(n);
+  return !!(c&&(c.name||'').toLowerCase().indexOf(q)>=0);
+}
+
+function purchaseMatchesSearch(pur, query) {
+  if(!query) return true;
+  if(pur.exchange){
+    return exchangeNums(pur.exchange,'in').concat(exchangeNums(pur.exchange,'out')).some(function(n){
+      return courseNumMatchesQuery(n,query);
+    });
+  }
+  return (pur.nums||[]).some(function(n){return courseNumMatchesQuery(n,query);});
+}
+
+function buyerMatchesSearch(buyer, query) {
+  var q=(query||'').trim().toLowerCase();
+  if(!q) return true;
+  if((buyer.name||'').toLowerCase().indexOf(q)>=0) return true;
+  if((buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(q)>=0) return true;
+  return (buyer.purchases||[]).some(function(pur){return purchaseMatchesSearch(pur,q);});
+}
+
+function buyerMatchesFilteredSearch(buyer, query) {
+  var q=(query||'').trim().toLowerCase();
+  if(!q) return true;
+  if((buyer.name||'').toLowerCase().indexOf(q)>=0) return true;
+  if((buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(q)>=0) return true;
+  return (buyer.purchases||[]).some(function(pur){
+    return purchaseMatchesPendingFilter(pur)&&purchaseMatchesSearch(pur,q);
+  });
+}
+
+function groupMatchesSearch(group, query) {
+  var q=(query||'').trim().toLowerCase();
+  if(!q) return true;
+  if((group.name||'').toLowerCase().indexOf(q)>=0) return true;
+  if((group.nums||[]).some(function(n){return courseNumMatchesQuery(n,q);})) return true;
+  return groupMembers(String(group.id)).some(function(buyer){return buyerMatchesSearch(buyer,q);});
+}
+
 function buyerHistorySummary(buyer) {
   var purchases=buyer.purchases||[];
   var nums=[];
@@ -2090,21 +2137,21 @@ function renderPending() {
   if(!buyers.length&&!lbg().length){el.innerHTML='<div class="empty">📭 尚無購買人</div>';return;}
   if(buyerPayFilter==='join'){
     var search=document.getElementById('pending-buyer-search');
-    if(search) search.placeholder='🔍 搜尋對方或跟團名稱...';
+    if(search) search.placeholder='🔍 搜尋對方、跟團或課程...';
     renderJoinList(el,q);
     return;
   } else if(buyerPayFilter==='group'){
     var search=document.getElementById('pending-buyer-search');
-    if(search) search.placeholder='🔍 搜尋團購或購買人...';
+    if(search) search.placeholder='🔍 搜尋團購、購買人或課程...';
   } else {
     var search=document.getElementById('pending-buyer-search');
-    if(search) search.placeholder='🔍 搜尋購買人...';
+    if(search) search.placeholder='🔍 搜尋購買人、課程編號或名稱...';
   }
   var html='';
   if(buyerPayFilter==='group'||buyerPayFilter==='completed'){
     lbg().forEach(function(g){
       if(isJoinGroup(g)) return;
-      if(q&&(g.name||'').toLowerCase().indexOf(q)<0&&!groupMembers(String(g.id)).some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;})) return;
+      if(!groupMatchesSearch(g,q)) return;
       var completed=groupIsCompleted(g);
       if(buyerPayFilter==='completed'){
         if(!completed) return;
@@ -2115,7 +2162,7 @@ function renderPending() {
   }
   buyers.forEach(function(buyer){
     if(buyer.mode==='join') return;
-    if(q&&(buyer.name||'').toLowerCase().indexOf(q)<0&&(buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(q)<0) return;
+    if(!buyerMatchesFilteredSearch(buyer,q)) return;
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
     var needs=buyerNeedsPending(buyer);
     if(buyerPayFilter==='completed'){
@@ -2123,7 +2170,7 @@ function renderPending() {
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
-    html+=renderBuyerCard(buyer,'pending');
+    html+=renderBuyerCard(buyer,'pending',q);
   });
   el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
@@ -2158,14 +2205,13 @@ function renderAllBuyers() {
     if(isJoinGroup(g)) return;
     if(buyerGroupFilter!== 'all' && buyerGroupFilter!==String(g.id)) return;
     var members=groupMembers(String(g.id));
-    var match=!q||(g.name||'').toLowerCase().indexOf(q)>=0||members.some(function(b){return (b.name||'').toLowerCase().indexOf(q)>=0;});
+    var match=groupMatchesSearch(g,q);
     if(match) html+=renderAllGroupCard(g);
   });
   var buyers=lb().filter(function(b){
     if(b.mode==='join') return false;
     if(buyerGroupId(b)) return false;
-    var matchName=!q||(b.name||'').toLowerCase().indexOf(q)>=0;
-    return matchName&&buyerMatchesGroup(b);
+    return buyerMatchesSearch(b,q)&&buyerMatchesGroup(b);
   });
   var el=document.getElementById('all-buyers-list');
   html+=buyers.map(function(b){return renderBuyerCard(b,'all');}).join('');
@@ -2173,7 +2219,7 @@ function renderAllBuyers() {
 }
 window.renderAllBuyers = renderAllBuyers;
 
-function renderBuyerCard(buyer, mode) {
+function renderBuyerCard(buyer, mode, searchQuery) {
   var firstPur=buyer.purchases&&buyer.purchases[0];
   var firstType=firstPur&&firstPur.exchange?firstPur.exchange.type:'buy';
   var stLabel='';
@@ -2195,6 +2241,12 @@ function renderBuyerCard(buyer, mode) {
   }
   var splitPurchaseRows=mode==='pending'&&(buyerPayFilter==='completed'||buyerPayFilter==='paid');
   var pHtml='';
+  var normalizedSearch=(searchQuery||'').trim().toLowerCase();
+  var searchMatchesBuyer=normalizedSearch&&(
+    (buyer.name||'').toLowerCase().indexOf(normalizedSearch)>=0||
+    (buyerGroupName(buyerGroupId(buyer))||'').toLowerCase().indexOf(normalizedSearch)>=0
+  );
+  var restrictPurchasesByCourse=!!(normalizedSearch&&!searchMatchesBuyer);
   var purchasePairs=(buyer.purchases||[]).map(function(pur,pi){return {pur:pur,pi:pi};});
   if(mode==='pending'&&buyerPayFilter==='paid'){
     purchasePairs.sort(function(a,b){return purchaseTimeValue(b.pur,b.pi)-purchaseTimeValue(a.pur,a.pi);});
@@ -2202,6 +2254,7 @@ function renderBuyerCard(buyer, mode) {
   purchasePairs.forEach(function(pair){
     var pur=pair.pur, pi=pair.pi;
     if(mode==='pending' && !purchaseMatchesPendingFilter(pur)) return;
+    if(restrictPurchasesByCourse&&!purchaseMatchesSearch(pur,normalizedSearch)) return;
     var sentNums=pur.sentNums||[];
     var allNums=pur.nums||[];
     var purType=pur.exchange?pur.exchange.type:'buy';
