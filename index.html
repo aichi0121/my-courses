@@ -257,6 +257,8 @@ button{touch-action:manipulation;}
 .ci-num{grid-column:2;width:auto;}
 .ci-name{grid-column:3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ci-tag{grid-column:4;justify-self:stretch;text-align:center;}
+.ci-unselected{background:#fff3d8;color:#a06108;border:1px solid #f2d08a;}
+.unselected-btn{margin-top:7px;}
 
 @media (min-width:900px){
   body{padding-top:26px;}
@@ -474,7 +476,8 @@ button{touch-action:manipulation;}
 </div>
 <div class="ex-box" id="nb-exbox" style="display:none">
 <div class="fg"><label>對方給我的課程名稱</label>
-  <input class="num-inp" id="nb-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('nb-ex-in','nb-ex-in-preview')"/>
+	  <input class="num-inp" id="nb-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('nb-ex-in','nb-ex-in-preview')"/>
+	  <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('nb-ex-in','nb-ex-in-preview')">◻️ 對方尚未選課</button>
   <div class="num-hint">用空格、頓號或逗號分隔</div>
   <div class="parsed-nums" id="nb-ex-in-preview"></div>
   <select id="nb-ex-in-status" style="margin-top:5px;">
@@ -483,7 +486,8 @@ button{touch-action:manipulation;}
   </select>
 </div>
 <div class="fg" id="nb-ex-out-wrap"><label>我給對方的課程名稱</label>
-  <input class="num-inp" id="nb-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOutNb()"/>
+	  <input class="num-inp" id="nb-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOutNb()"/>
+	  <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('nb-ex-out','nb-ex-out-preview')">◻️ 我尚未選課</button>
   <div class="num-hint">用空格、頓號或逗號分隔</div>
   <div class="parsed-nums" id="nb-ex-out-preview"></div>
   <select id="nb-ex-out-status" style="margin-top:5px;">
@@ -496,7 +500,8 @@ button{touch-action:manipulation;}
           <select id="nb-status" onchange="syncEmptyBuyerRowsStatus()"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
         </div>
         <div class="fg" id="nb-courseid-wrap"><label>購買課程編號</label>
-          <input class="num-inp" id="nb-nums" type="text" placeholder="例：80 30 33 36 120" oninput="previewNums('nb-nums','nb-preview')"/>
+	          <input class="num-inp" id="nb-nums" type="text" placeholder="例：80 30 33 36 120" oninput="previewNums('nb-nums','nb-preview')"/>
+	          <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('nb-nums','nb-preview')">◻️ 課程未選</button>
           <div class="num-hint">用空格、頓號或逗號分隔</div>
           <div class="parsed-nums" id="nb-preview"></div>
         </div>
@@ -572,7 +577,8 @@ button{touch-action:manipulation;}
 </div>
 <div class="ex-box" id="ap-exbox" style="display:none">
 <div class="fg"><label>對方給我的課程名稱</label>
-  <input class="num-inp" id="ap-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('ap-ex-in','ap-ex-in-preview')"/>
+	  <input class="num-inp" id="ap-ex-in" type="text" placeholder="例：02 05 08" oninput="previewNums('ap-ex-in','ap-ex-in-preview')"/>
+	  <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('ap-ex-in','ap-ex-in-preview')">◻️ 對方尚未選課</button>
   <div class="num-hint">用空格、頓號或逗號分隔</div>
   <div class="parsed-nums" id="ap-ex-in-preview"></div>
   <select id="ap-ex-in-status" style="margin-top:5px;">
@@ -581,7 +587,8 @@ button{touch-action:manipulation;}
   </select>
 </div>
 <div class="fg" id="ap-ex-out-wrap"><label>我給對方的課程名稱</label>
-  <input class="num-inp" id="ap-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOut()"/>
+	  <input class="num-inp" id="ap-ex-out" type="text" placeholder="例：02 05 08" oninput="previewExOut()"/>
+	  <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('ap-ex-out','ap-ex-out-preview')">◻️ 我尚未選課</button>
   <div class="num-hint">用空格、頓號或逗號分隔</div>
   <div class="parsed-nums" id="ap-ex-out-preview"></div>
   <select id="ap-ex-out-status" style="margin-top:5px;">
@@ -595,7 +602,8 @@ button{touch-action:manipulation;}
     <select id="ap-status"><option value="paid">✅ 已付款</option><option value="pre">⏳ 預約未付款</option></select>
   </div>
   <div class="fg" id="ap-courseid-wrap"><label>購買課程編號</label>
-    <input class="num-inp" id="ap-nums" type="text" placeholder="例：80 30 33" oninput="previewNums('ap-nums','ap-preview')"/>
+	    <input class="num-inp" id="ap-nums" type="text" placeholder="例：80 30 33" oninput="previewNums('ap-nums','ap-preview')"/>
+	    <button type="button" class="btn-sm unselected-btn" onclick="setUnselectedValue('ap-nums','ap-preview')">◻️ 課程未選</button>
     <div class="num-hint">用空格、頓號或逗號分隔</div>
     <div class="parsed-nums" id="ap-preview"></div>
   </div>
@@ -992,12 +1000,34 @@ window.cpCard = cpCard;
 function cpSub(btn){var id=parseFloat(btn.dataset.id);var idx=parseInt(btn.dataset.idx);var c=lc().find(function(z){return z.id===id;});if(!c||!c.subs||!c.subs[idx])return;clip(subText(c.subs[idx]),function(){btn.textContent='✓ 已複製！';setTimeout(function(){btn.textContent='📋 複製此堂直播';},1800);toast('✅ 已複製直播連結！');});}
 window.cpSub = cpSub;
 
+var UNSELECTED='__unselected__';
+function isUnselected(num){return String(num)===UNSELECTED;}
 function parseNums(raw) {
-  return raw.split(/[、，,\s\/\\\n\r\t]+/).map(function(s){return s.trim();})
-    .filter(function(s){return /^\d+$/.test(s);})
+  var values=String(raw||'').split(/[、，,\s\/\\\n\r\t]+/).map(function(s){
+    s=s.trim();
+    return s==='未選'||s===UNSELECTED?UNSELECTED:s;
+  }).filter(function(s){return isUnselected(s)||/^\d+$/.test(s);})
     .filter(function(v,i,a){return a.indexOf(v)===i;});
+  return values.indexOf(UNSELECTED)>=0?[UNSELECTED]:values;
 }
-function findByNum(num){var n=parseInt(num,10);return lc().find(function(c){var m=(c.name||'').match(/^(\d+)/);return m&&parseInt(m[1],10)===n;})||null;}
+function findByNum(num){if(isUnselected(num))return null;var n=parseInt(num,10);return lc().find(function(c){var m=(c.name||'').match(/^(\d+)/);return m&&parseInt(m[1],10)===n;})||null;}
+function setUnselectedValue(inputId,previewId){
+  var input=document.getElementById(inputId);
+  if(!input)return;
+  input.value='未選';
+  previewNums(inputId,previewId);
+}
+window.setUnselectedValue=setUnselectedValue;
+function setUnselectedInRow(btn){
+  var fg=btn.closest('.fg');
+  var input=fg&&fg.querySelector('.num-inp');
+  if(!input)return;
+  input.value='未選';
+  previewNumsInRow(input);
+  var row=btn.closest('.eb-pur-row');
+  if(row&&input.classList.contains('eb-pur-nums'))renderEditSendRows(row);
+}
+window.setUnselectedInRow=setUnselectedInRow;
 
 function doQuick() {
   var raw=document.getElementById('qinp').value;
@@ -1218,6 +1248,7 @@ function previewNums(inputId,previewId) {
   var el=document.getElementById(previewId);
   if(!nums.length){el.innerHTML='';return;}
   el.innerHTML=nums.map(function(n){
+    if(isUnselected(n)) return '<span class="pnum">◻️ 課程未選</span>';
     var c=findByNum(n);
     return '<span class="pnum'+(c?'':' nf')+'">'+(c?esc(c.name):'#'+n+' 找不到')+'</span>';
   }).join('');
@@ -2002,10 +2033,10 @@ function exchangeNums(ex, dir) {
 function exchangeDoneNums(ex, dir) {
   if(!ex) return [];
   if(dir==='in'){
-    if(Array.isArray(ex.inReceivedNums)) return ex.inReceivedNums.map(String);
-    return ex.inStatus==='received'?exchangeNums(ex,'in').slice():[];
+    if(Array.isArray(ex.inReceivedNums)) return ex.inReceivedNums.map(String).filter(function(n){return !isUnselected(n);});
+    return ex.inStatus==='received'?exchangeNums(ex,'in').filter(function(n){return !isUnselected(n);}):[];
   }
-  if(Array.isArray(ex.outSentNums)) return ex.outSentNums.map(String);
+  if(Array.isArray(ex.outSentNums)) return ex.outSentNums.map(String).filter(function(n){return !isUnselected(n);});
   if(ex.outStatus==='sent'){
     return exchangeNums(ex,'out').filter(function(n){var c=findByNum(n);return c&&hasLink(c);});
   }
@@ -2048,6 +2079,7 @@ function courseNumMatchesQuery(num, query) {
   var q=(query||'').trim().toLowerCase();
   var n=String(num||'').trim();
   if(!q||!n) return false;
+  if(isUnselected(n)) return '未選'.indexOf(q)>=0;
   if(/^\#?\d+$/.test(q)){
     return parseInt(q.replace('#',''),10)===parseInt(n,10);
   }
@@ -2100,6 +2132,7 @@ function buyerHistorySummary(buyer) {
     (pur.nums||[]).forEach(function(n){if(nums.indexOf(n)<0) nums.push(n);});
   });
   var names=nums.map(function(n){
+    if(isUnselected(n)) return '未選';
     var c=findByNum(n);
     return c?'#'+n+' '+c.name:'#'+n;
   });
@@ -2304,6 +2337,7 @@ function renderBuyerCard(buyer, mode, searchQuery) {
       statusLabel='<span class="pr-st" style="background:#ebf8ff;color:#2b6cb0;">📥 贈送</span>';
     }
     var ciHtml=allNums.map(function(n){
+      if(isUnselected(n)) return '<div class="ci"><span class="ci-cb"></span><span class="ci-num">—</span><span class="ci-name">課程尚未選擇</span><span class="ci-tag ci-unselected">未選</span></div>';
       var c=findByNum(n);
       var sent=sentNums.indexOf(n)>=0;
       var tag,cb='';
@@ -2325,26 +2359,28 @@ function renderBuyerCard(buyer, mode, searchQuery) {
 var sendBtnHtml='';
 if(pur.exchange && pur.exchange.type==='exchange'){
   var exOutNums=exchangeNums(pur.exchange,'out');
-  var exPendingWithLink=exOutNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&!exchangeItemDone(pur.exchange,'out',n);});
-  var exPendingNoLink=exOutNums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&!exchangeItemDone(pur.exchange,'out',n);});
+	  var exPendingWithLink=exOutNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&!exchangeItemDone(pur.exchange,'out',n);});
+	  var exPendingNoLink=exOutNums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&!exchangeItemDone(pur.exchange,'out',n);});
+	  var exHasUnselected=exPendingNoLink.some(isUnselected);
   if(exPendingWithLink.length>0){
-    var exHint=exPendingNoLink.length>0?' (另有 '+exPendingNoLink.length+' 堂未開課)':'';
+	    var exHint=exPendingNoLink.length>0?' (另有 '+exPendingNoLink.length+' 筆未選／未開課)':'';
     sendBtnHtml='<button class="send-btn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="copyExchangeOut(this)">📋 複製並標記已發（'+exPendingWithLink.length+' 堂）'+exHint+'</button>';
   } else if(exPendingNoLink.length>0){
-    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+exPendingNoLink.length+' 堂開課中</button>';
+	    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>'+(exHasUnselected?'◻️ 等待選擇我方課程':'⏳ 等待 '+exPendingNoLink.length+' 堂開課中')+'</button>';
   } else if(exchangeHasPending(pur.exchange)){
     sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待對方發送課程</button>';
   } else {
     sendBtnHtml='<button class="send-btn ok" disabled>✅ 交換已完成</button>';
   }
 } else {
-  var pendingWithLink=allNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
-  var pendingNoLink=allNums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&sentNums.indexOf(n)<0;});
+	  var pendingWithLink=allNums.filter(function(n){var c=findByNum(n);return c&&hasLink(c)&&sentNums.indexOf(n)<0;});
+	  var pendingNoLink=allNums.filter(function(n){var c=findByNum(n);return(!c||!hasLink(c))&&sentNums.indexOf(n)<0;});
+	  var hasUnselected=pendingNoLink.some(isUnselected);
   if(pendingWithLink.length>0){
-    var hint=pendingNoLink.length>0?' (另有 '+pendingNoLink.length+' 堂未開課)':'';
+	    var hint=pendingNoLink.length>0?' (另有 '+pendingNoLink.length+' 筆未選／未開課)':'';
     sendBtnHtml='<button class="send-btn" data-bid="'+buyer.id+'" data-pi="'+pi+'" onclick="copySend(this)">📋 複製並標記已發（'+pendingWithLink.length+' 堂）'+hint+'</button>';
   } else if(pendingNoLink.length>0){
-    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>⏳ 等待 '+pendingNoLink.length+' 堂開課中</button>';
+	    sendBtnHtml='<button class="send-btn" style="background:#ed8936;cursor:default;" disabled>'+(hasUnselected?'◻️ 等待選擇課程':'⏳ 等待 '+pendingNoLink.length+' 堂開課中')+'</button>';
   } else {
     sendBtnHtml='<button class="send-btn ok" disabled>✅ 全部已發送</button>';
   }
@@ -2356,8 +2392,9 @@ if(pur.exchange){
   var ex=pur.exchange;
 
   var inNums=exchangeNums(ex,'in');
-  var inRows=inNums.map(function(n){
-    var c=findByNum(n);
+	  var inRows=inNums.map(function(n){
+	    if(isUnselected(n)) return '<div class="ci ex-in"><span class="ci-cb"></span><span class="ci-num">收</span><span class="ci-name">對方尚未選擇課程</span><span class="ci-tag ci-unselected">未選</span></div>';
+	    var c=findByNum(n);
     var name=c?esc(c.name):'#'+esc(n||'—')+' 找不到課程';
     var inDone=exchangeItemDone(ex,'in',n);
     return '<div class="ci ex-in">'+
@@ -2377,8 +2414,9 @@ if(pur.exchange){
   var outRows='';
   if(ex.type==='exchange'){
     var outNums=exchangeNums(ex,'out');
-    outRows=outNums.map(function(n){
-      var outC=findByNum(n);
+	    outRows=outNums.map(function(n){
+	      if(isUnselected(n)) return '<div class="ci ex-out"><span class="ci-cb"></span><span class="ci-num">發</span><span class="ci-name">我尚未選擇課程</span><span class="ci-tag ci-unselected">未選</span></div>';
+	      var outC=findByNum(n);
       var outName=outC?esc(outC.name):'#'+esc(n||'—')+' 找不到課程';
       var outDone=exchangeItemDone(ex,'out',n);
       var outHasLink=outC&&hasLink(outC);
@@ -2518,7 +2556,7 @@ window.copyExchangeOut = copyExchangeOut;
 
 
 function editExchangeText(nums, fallback) {
-  return nums&&nums.length?nums.join(' '):(fallback||'');
+  return nums&&nums.length?nums.map(function(n){return isUnselected(n)?'未選':n;}).join(' '):(fallback||'');
 }
 
 function renderEditBuyerPurchases(buyer, onlyPi) {
@@ -2548,12 +2586,12 @@ function renderEditBuyerPurchases(buyer, onlyPi) {
       '</select></div>'+
       '<div class="eb-pur-buy-wrap" style="display:'+buyDisplay+'">'+
         '<div class="fg"><label>付款狀態</label><select class="eb-pur-status"><option value="paid"'+((pur.status||'paid')==='paid'?' selected':'')+'>✅ 已付款</option><option value="pre"'+((pur.status||'paid')==='pre'?' selected':'')+'>⏳ 預約未付款</option></select></div>'+
-        '<div class="fg"><label>購買課程編號</label><input class="num-inp eb-pur-nums" type="text" value="'+esc((pur.nums||[]).join(' '))+'" placeholder="例：80 30 33" oninput="previewNumsInRow(this);renderEditSendRows(this.closest(\'.eb-pur-row\'))"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div></div>'+
+        '<div class="fg"><label>購買課程編號</label><input class="num-inp eb-pur-nums" type="text" value="'+esc((pur.nums||[]).map(function(n){return isUnselected(n)?'未選':n;}).join(' '))+'" placeholder="例：80 30 33" oninput="previewNumsInRow(this);renderEditSendRows(this.closest(\'.eb-pur-row\'))"/><button type="button" class="btn-sm unselected-btn" onclick="setUnselectedInRow(this)">◻️ 課程未選</button><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div></div>'+
         '<div class="fg"><label>逐堂發送狀態</label><div class="edit-send-list" data-initial-sent="'+esc(oldSent.join(' '))+'"></div><div class="edit-send-actions"><button type="button" class="btn-sm" onclick="setEditSendChecks(this,true)">勾選已開課</button><button type="button" class="btn-sm" onclick="setEditSendChecks(this,false)">全部取消</button></div><div class="num-hint">未開課或尚無連結的課程會保留為待發；開課後會自動變成可勾選、可複製。</div></div>'+
       '</div>'+
       '<div class="eb-pur-ex-wrap" style="display:'+exDisplay+'">'+
-        '<div class="fg"><label>對方給我的課程名稱</label><input class="num-inp eb-ex-in" type="text" value="'+esc(inText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-in-status" style="margin-top:5px;"><option value="pending"'+((ex.inStatus||'pending')==='pending'?' selected':'')+'>⏳ 未開課／待收</option><option value="received"'+(ex.inStatus==='received'?' selected':'')+'>✅ 已收到</option></select></div>'+
-        '<div class="fg eb-ex-out-wrap" style="display:'+outDisplay+'"><label>我給對方的課程名稱</label><input class="num-inp eb-ex-out" type="text" value="'+esc(outText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-out-status" style="margin-top:5px;"><option value="pending"'+((ex.outStatus||'pending')==='pending'?' selected':'')+'>⏳ 待發</option><option value="sent"'+(ex.outStatus==='sent'?' selected':'')+'>✅ 已發</option></select></div>'+
+        '<div class="fg"><label>對方給我的課程名稱</label><input class="num-inp eb-ex-in" type="text" value="'+esc(inText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><button type="button" class="btn-sm unselected-btn" onclick="setUnselectedInRow(this)">◻️ 對方尚未選課</button><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-in-status" style="margin-top:5px;"><option value="pending"'+((ex.inStatus||'pending')==='pending'?' selected':'')+'>⏳ 未開課／待收</option><option value="received"'+(ex.inStatus==='received'?' selected':'')+'>✅ 已收到</option></select></div>'+
+        '<div class="fg eb-ex-out-wrap" style="display:'+outDisplay+'"><label>我給對方的課程名稱</label><input class="num-inp eb-ex-out" type="text" value="'+esc(outText)+'" placeholder="例：02 05 08" oninput="previewNumsInRow(this)"/><button type="button" class="btn-sm unselected-btn" onclick="setUnselectedInRow(this)">◻️ 我尚未選課</button><div class="num-hint">用空格、頓號或逗號分隔</div><div class="parsed-nums eb-pur-preview"></div><select class="eb-ex-out-status" style="margin-top:5px;"><option value="pending"'+((ex.outStatus||'pending')==='pending'?' selected':'')+'>⏳ 待發</option><option value="sent"'+(ex.outStatus==='sent'?' selected':'')+'>✅ 已發</option></select></div>'+
       '</div>'+
       '<div class="fg"><label>備註</label><textarea class="eb-pur-note" placeholder="備註...">'+esc(pur.note||'')+'</textarea></div>'+
     '</div>';
@@ -2573,6 +2611,7 @@ function renderEditSendRows(row) {
   var nums=parseNums(input.value);
   if(!nums.length){list.innerHTML='<div class="edit-send-empty">請先輸入課程編號</div>';list.dataset.rendered='1';return;}
   list.innerHTML=nums.map(function(n){
+    if(isUnselected(n)) return '<div class="edit-send-row"><span></span><span class="edit-send-num">—</span><span class="edit-send-name">課程尚未選擇</span><span class="ci-tag ci-unselected">未選</span></div>';
     var c=findByNum(n);
     var hasCourseLink=!!(c&&hasLink(c));
     var isChecked=checked.indexOf(String(n))>=0;
@@ -2599,6 +2638,7 @@ function previewNumsInRow(inp) {
   var wrap=inp.closest('.fg');
   var prev=wrap?wrap.querySelector('.parsed-nums'):null;
   if(prev) prev.innerHTML=parseNums(inp.value).map(function(n){
+    if(isUnselected(n)) return '<span class="pnum">◻️ 課程未選</span>';
     var c=findByNum(n);
     return '<span class="pnum'+(c?'':' nf')+'">'+(c?esc(c.name):'#'+esc(n)+' 找不到')+'</span>';
   }).join('');
