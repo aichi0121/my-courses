@@ -2000,17 +2000,18 @@ function renderJoinList(targetEl, query) {
   var el=targetEl||document.getElementById('join-list');
   if(!el) return '';
   var q=typeof query==='string'?query:(document.getElementById('join-search')&&document.getElementById('join-search').value||'').trim().toLowerCase();
-  var html='';
-  lbg().filter(isJoinGroup).forEach(function(g){
+  var cards=[];
+  lbg().filter(isJoinGroup).forEach(function(g,gi){
     var member=joinMemberForGroup(String(g.id));
     var hay=((g.name||'')+' '+(member?member.name:'')).toLowerCase();
     if(q&&hay.indexOf(q)<0) return;
-    html+=renderJoinCardFromGroup(g);
+    cards.push({time:groupLatestTime(g,gi),html:renderJoinCardFromGroup(g)});
   });
-  lb().filter(function(b){return b.mode==='join'&&!buyerGroupId(b);}).forEach(function(b){
+  lb().filter(function(b){return b.mode==='join'&&!buyerGroupId(b);}).forEach(function(b,bi){
     if(q&&(b.name||'').toLowerCase().indexOf(q)<0) return;
-    html+=renderJoinCardFromBuyer(b);
+    cards.push({time:buyerLatestTime(b,bi),html:renderJoinCardFromBuyer(b)});
   });
+  var html=newestFirst(cards).map(function(card){return card.html;}).join('');
   var out=html||'<div class="empty">📭 尚無跟團紀錄</div>';
   el.innerHTML=out;
   return out;
@@ -2170,6 +2171,28 @@ function purchaseTimeValue(pur, fallbackIndex) {
   return value>1000000000000?value:Number(fallbackIndex||0);
 }
 
+// 合購各分頁一律以「最後新增／最後購買」時間由新到舊排列。
+// 舊資料若沒有時間戳記，才退回原本的資料順序。
+function buyerLatestTime(buyer, fallbackIndex) {
+  var latest=Number(buyer&&buyer.id)||0;
+  (buyer&&buyer.purchases||[]).forEach(function(pur, pi){
+    latest=Math.max(latest,purchaseTimeValue(pur,pi));
+  });
+  return latest||Number(fallbackIndex||0);
+}
+
+function groupLatestTime(group, fallbackIndex) {
+  var latest=Number(group&&group.createdAt)||Number(group&&group.id)||0;
+  groupMembers(String(group&&group.id)).forEach(function(member, mi){
+    latest=Math.max(latest,buyerLatestTime(member,mi));
+  });
+  return latest||Number(fallbackIndex||0);
+}
+
+function newestFirst(items) {
+  return items.slice().sort(function(a,b){return b.time-a.time;});
+}
+
 function purchaseDateLabel(pur) {
   var value=Number(pur&&pur.id);
   if(!(value>1000000000000)) return '';
@@ -2213,9 +2236,9 @@ function renderPending() {
     var search=document.getElementById('pending-buyer-search');
     if(search) search.placeholder='🔍 搜尋購買人、課程編號或名稱...';
   }
-  var html='';
+  var cards=[];
   if(buyerPayFilter==='group'||buyerPayFilter==='completed'){
-    lbg().forEach(function(g){
+    lbg().forEach(function(g,gi){
       if(isJoinGroup(g)) return;
       if(!groupMatchesSearch(g,q)) return;
       var completed=groupIsCompleted(g);
@@ -2223,10 +2246,10 @@ function renderPending() {
         if(!completed) return;
       } else if(completed) return;
       if(!groupMatchesPaymentFilter(g)) return;
-      html+=renderPendingGroupCard(g);
+      cards.push({time:groupLatestTime(g,gi),html:renderPendingGroupCard(g)});
     });
   }
-  buyers.forEach(function(buyer){
+  buyers.forEach(function(buyer,bi){
     if(buyer.mode==='join') return;
     if(!buyerMatchesFilteredSearch(buyer,q)) return;
     if(buyerGroupId(buyer)&&!buyerHasExchange(buyer)) return;
@@ -2236,8 +2259,10 @@ function renderPending() {
     } else if(!needs) return;
     if(buyerPayFilter==='exchange'&&!buyerHasExchange(buyer)) return;
     if(buyerPayFilter!=='all'&&buyerPayFilter!=='exchange'&&buyerPayFilter!=='completed'&&!buyerHasPaymentStatus(buyer,buyerPayFilter)) return;
-    html+=renderBuyerCard(buyer,'pending',q);
+    var card=renderBuyerCard(buyer,'pending',q);
+    if(card) cards.push({time:buyerLatestTime(buyer,bi),html:card});
   });
+  var html=newestFirst(cards).map(function(card){return card.html;}).join('');
   el.innerHTML=html||(buyerPayFilter==='completed'?'<div class="empty">📭 尚無已完成紀錄</div>':'<div class="empty">✅ 全部已發送完畢</div>');
 }
 
@@ -2266,13 +2291,13 @@ function renderAllGroupCard(g) {
 
 function renderAllBuyers() {
   var q=(document.getElementById('buyer-search').value||'').trim().toLowerCase();
-  var html='';
-  lbg().forEach(function(g){
+  var cards=[];
+  lbg().forEach(function(g,gi){
     if(isJoinGroup(g)) return;
     if(buyerGroupFilter!== 'all' && buyerGroupFilter!==String(g.id)) return;
     var members=groupMembers(String(g.id));
     var match=groupMatchesSearch(g,q);
-    if(match) html+=renderAllGroupCard(g);
+    if(match) cards.push({time:groupLatestTime(g,gi),html:renderAllGroupCard(g)});
   });
   var buyers=lb().filter(function(b){
     if(b.mode==='join') return false;
@@ -2280,7 +2305,10 @@ function renderAllBuyers() {
     return buyerMatchesSearch(b,q)&&buyerMatchesGroup(b);
   });
   var el=document.getElementById('all-buyers-list');
-  html+=buyers.map(function(b){return renderBuyerCard(b,'all');}).join('');
+  buyers.forEach(function(b,bi){
+    cards.push({time:buyerLatestTime(b,bi),html:renderBuyerCard(b,'all')});
+  });
+  var html=newestFirst(cards).map(function(card){return card.html;}).join('');
   el.innerHTML=html||'<div class="empty">📭 沒有符合的購買人</div>';
 }
 window.renderAllBuyers = renderAllBuyers;
@@ -2314,9 +2342,7 @@ function renderBuyerCard(buyer, mode, searchQuery) {
   );
   var restrictPurchasesByCourse=!!(normalizedSearch&&!searchMatchesBuyer);
   var purchasePairs=(buyer.purchases||[]).map(function(pur,pi){return {pur:pur,pi:pi};});
-  if(mode==='pending'&&buyerPayFilter==='paid'){
-    purchasePairs.sort(function(a,b){return purchaseTimeValue(b.pur,b.pi)-purchaseTimeValue(a.pur,a.pi);});
-  }
+  purchasePairs.sort(function(a,b){return purchaseTimeValue(b.pur,b.pi)-purchaseTimeValue(a.pur,a.pi);});
   purchasePairs.forEach(function(pair){
     var pur=pair.pur, pi=pair.pi;
     if(mode==='pending' && !purchaseMatchesPendingFilter(pur)) return;
