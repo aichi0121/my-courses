@@ -185,6 +185,7 @@ button{touch-action:manipulation;}
 .edit-send-empty{padding:10px;color:var(--sub);font-size:.76rem;text-align:center;}
 .num-inp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}.parsed-nums{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}.pnum{padding:3px 8px;background:var(--accent-soft);color:var(--accent);border-radius:999px;font-size:.74rem;font-weight:850;}.pnum.nf{background:#fff3f3;color:#c53030;}
 .yt-row,.sub-yt-row{display:grid;grid-template-columns:96px minmax(0,1fr) 32px;gap:7px;margin-bottom:7px;align-items:center;}.yt-row .lbl,.yt-row .url,.sub-row input{padding:9px;border:1.5px solid var(--border);border-radius:8px;background:#fff;min-width:0;}.yt-row .del,.sub-row .sub-del,.sub-yt-row .sub-yt-del{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--sub);}
+.schedule-row{display:grid;grid-template-columns:minmax(0,1fr) 142px 116px 32px;gap:7px;margin-bottom:7px;align-items:center;}.schedule-row input,.schedule-row select{width:100%;min-height:40px;padding:8px 9px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);min-width:0;}.schedule-row button{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--sub);}
 .sub-row{padding:11px;margin-bottom:9px;}.sub-row .sub-top{display:flex;gap:7px;align-items:center;margin-bottom:7px;}.sub-row .sub-title{flex:1;}.sub-card{margin-top:9px;overflow:hidden;}.sub-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:none;padding:10px 11px;font-size:.84rem;font-weight:850;color:var(--text);text-align:left;cursor:pointer;}.sub-card-title span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.sub-card-arrow{font-size:.78rem;color:var(--sub);transition:transform .2s;}.sub-card-title.open .sub-card-arrow{transform:rotate(180deg);}.sub-card-body{padding:0 11px 11px;}.sub-card-body.collapsed{display:none;}.sub-actions .bcopy{flex:1;}
 .mo{display:none;position:fixed;inset:0;background:rgba(17,24,39,.48);z-index:100;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}.mo.open{display:flex;}.mbox{background:#fff;border-radius:10px;padding:20px;width:min(560px,100%);max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 24px 80px rgba(17,24,39,.28);border:1px solid var(--border);}.mbox h3{font-size:1.02rem;margin-bottom:14px;}.mcancel{flex:1;background:#f2f6fb;color:var(--sub);}.msave{flex:2;}body.modal-open{overflow:hidden;}
 .catli{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;margin-bottom:7px;background:var(--panel-soft);border:1px solid var(--border);}.catli span{flex:1;font-size:.88rem;}.catli button{background:none;border:none;cursor:pointer;font-size:1rem;padding:3px 6px;border-radius:6px;color:var(--sub);}
@@ -289,6 +290,7 @@ button{touch-action:manipulation;}
   .lr .bcopy{grid-column:3;width:52px;min-width:52px;padding:6px 4px;}
   .ltext{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .yt-row,.sub-yt-row{grid-template-columns:minmax(72px,30%) minmax(0,1fr) 38px;position:relative;}
+  .schedule-row{grid-template-columns:minmax(0,1fr) 112px 38px;}.schedule-row select{grid-column:1 / span 2;}.schedule-row button{grid-column:3;grid-row:1 / span 2;width:38px;height:38px;}
   .yt-row .lbl,.sub-yt-row .sub-yt-lbl{grid-column:auto;width:100%;min-width:0;}
   .yt-row .del,.sub-yt-row .sub-yt-del{width:38px;height:38px;padding:0;justify-self:end;}
   .sub-row .sub-top{display:grid;grid-template-columns:minmax(0,1fr) 38px;}
@@ -373,8 +375,7 @@ button{touch-action:manipulation;}
       <div class="calendar-head"><button class="calendar-nav" onclick="moveCalendar(-1)" aria-label="上個月">‹</button><h2 id="calendar-title"></h2><button class="calendar-nav" onclick="moveCalendar(1)" aria-label="下個月">›</button></div>
       <div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
       <div class="calendar-grid" id="calendar-grid"></div>
-      <div class="calendar-legend"><span><i class="calendar-dot"></i>一般開課</span><span><i class="calendar-dot live"></i>直播課</span><span><i class="calendar-dot pending"></i>尚未排定</span></div>
-      <div class="unscheduled" id="unscheduled-courses"></div>
+      <div class="calendar-legend"><span><i class="calendar-dot"></i>一般開課</span><span><i class="calendar-dot live"></i>直播課</span></div>
     </div>
   </div>
   <div class="tc" id="tc-quick">
@@ -534,6 +535,7 @@ button{touch-action:manipulation;}
   <input type="hidden" id="e-id"/>
   <div class="fg"><label>課程類型</label><select id="e-type" onchange="toggleCourseType('e')"><option value="normal">一般課程</option><option value="live">直播課</option></select></div>
   <div class="fg"><label>課程名稱 *</label><input id="e-name" type="text"/></div>
+  <div class="fg"><label>🗓️ 開課批次</label><div id="e-schedules"></div><button class="btn-yt" type="button" onclick="addScheduleRow('e-schedules',{})">＋ 新增開課批次</button><div class="num-hint">可建立第一批、第二批等多個開課日期；儲存後會同步到日曆。</div></div>
   <div class="fg" id="e-yt-wrap"><label>🎬 YouTube 連結</label><div id="e-yt"></div>
     <button class="btn-yt" onclick="addYtRow('e-yt','','')">＋ 新增 YouTube 連結</button>
   </div>
@@ -551,11 +553,11 @@ button{touch-action:manipulation;}
 <div class="mo" id="calendarMo"><div class="mbox">
   <h3 id="calendar-mo-title">🗓️ 新增開課安排</h3>
   <input type="hidden" id="ce-id"/>
-  <div class="fg"><label>課程名稱 *</label><input id="ce-course" type="text" placeholder="例：尼泊爾正宗瑜伽"/></div>
+  <input type="hidden" id="ce-course-id"/>
+  <div class="fg"><label>既有課程 *</label><select id="ce-course"></select><div class="num-hint">開課批次會直接儲存在這堂既有課程中。</div></div>
   <div class="fg"><label>批次名稱（選填）</label><input id="ce-batch" type="text" placeholder="例：第一批、第二批"/></div>
   <div class="fg"><label>開課日期</label><input id="ce-date" type="date"/></div>
-  <div class="fg"><label>狀態</label><select id="ce-status"><option value="scheduled">已排定／尚未開課</option><option value="open">已開課</option><option value="pending">尚未排定日期</option></select></div>
-  <div class="fg"><label>類型</label><select id="ce-type"><option value="normal">一般課程</option><option value="live">直播課</option></select></div>
+  <div class="fg"><label>狀態</label><select id="ce-status"><option value="scheduled">已排定／尚未開課</option><option value="open">已開課</option></select></div>
   <div class="macts"><button class="mcancel" onclick="closeMo('calendarMo')">取消</button><button class="msave" onclick="saveCalendarEvent()">💾 儲存</button></div>
   <button class="btn-sm" id="ce-delete" style="display:none;width:100%;margin-top:9px;color:#c53030;background:#fff5f5;border-color:#fecaca;" onclick="deleteCalendarEvent()">🗑️ 刪除此安排</button>
 </div></div>
@@ -675,7 +677,6 @@ let _cats = [];
 let _gs = {};
 let _buyers = [];
 let _buyerGroups = [];
-let _calendarEvents = [];
 let _uid = null;
 
 // ── Firebase 讀寫 ──
@@ -701,8 +702,6 @@ function lb() { return _buyers; }
 function sb(d) { _buyers = d; fbSet('buyers', d); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
 function lbg() { return _buyerGroups; }
 function sbg(d) { _buyerGroups = d; fbSet('buyerGroups', d); refreshBuyerGroupSels(); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
-function lce() { return _calendarEvents; }
-function sce(d) { _calendarEvents = d; fbSet('calendarEvents', d); if(document.getElementById('tc-calendar').classList.contains('on')) renderCalendar(); }
 
 // ── 登入 / 登出 ──
 window.signInWithGoogle = async function() {
@@ -728,15 +727,14 @@ onAuthStateChanged(auth, async (user) => {
     if (avatar && user.photoURL) avatar.src = user.photoURL;
 
     // 從 Firestore 載入資料
-    const [courses, cats, gs, buyers, buyerGroups, calendarEvents] = await Promise.all([
-      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers'), fbGet('buyerGroups'), fbGet('calendarEvents')
+    const [courses, cats, gs, buyers, buyerGroups] = await Promise.all([
+      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers'), fbGet('buyerGroups')
     ]);
     _courses = Array.isArray(courses) ? courses : [];
     _cats = Array.isArray(cats) ? cats : [];
     _gs = (gs && typeof gs === 'object' && !Array.isArray(gs)) ? gs : {};
     _buyers = Array.isArray(buyers) ? buyers : [];
     _buyerGroups = Array.isArray(buyerGroups) ? buyerGroups : [];
-    _calendarEvents = Array.isArray(calendarEvents) ? calendarEvents : [];
 
     loading.classList.add('hide');
     loginScreen.classList.add('hide');
@@ -821,41 +819,54 @@ window.goTab = goTab;
 function calendarDateKey(y,m,d) { return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
 function moveCalendar(delta) { calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); renderCalendar(); }
 window.moveCalendar = moveCalendar;
+function courseSchedules(course) { return Array.isArray(course.openingSchedules)?course.openingSchedules:[]; }
+function findCourseById(id) { return lc().find(function(c){return String(c.id)===String(id);}); }
+function renderCalendarCourseSelect(selectedId) {
+  var select=document.getElementById('ce-course');
+  var courses=sortArr(lc());
+  select.innerHTML='<option value="">— 選擇既有課程 —</option>'+courses.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';}).join('');
+  select.value=selectedId==null?'':String(selectedId);
+}
 function openCalendarEditor(id) {
-  var event=id?lce().find(function(e){return e.id===id;}):null;
-  document.getElementById('ce-id').value=event?event.id:'';
-  document.getElementById('ce-course').value=event?event.course||'':'';
-  document.getElementById('ce-batch').value=event?event.batch||'':'';
-  document.getElementById('ce-date').value=event?event.date||'':'';
-  document.getElementById('ce-status').value=event?event.status||'scheduled':'scheduled';
-  document.getElementById('ce-type').value=event?event.type||'normal':'normal';
-  document.getElementById('calendar-mo-title').textContent=event?'🗓️ 編輯開課安排':'🗓️ 新增開課安排';
-  document.getElementById('ce-delete').style.display=event?'block':'none';
+  var schedule=null, owner=null;
+  if(id){lc().some(function(course){var found=courseSchedules(course).find(function(item){return item.id===id;});if(found){schedule=found;owner=course;return true;}return false;});}
+  document.getElementById('ce-id').value=schedule?schedule.id:'';
+  document.getElementById('ce-course-id').value=owner?owner.id:'';
+  renderCalendarCourseSelect(owner?owner.id:'');
+  document.getElementById('ce-course').disabled=!!schedule;
+  document.getElementById('ce-batch').value=schedule?schedule.batch||'':'';
+  document.getElementById('ce-date').value=schedule?schedule.date||'':'';
+  document.getElementById('ce-status').value=schedule?schedule.status||'scheduled':'scheduled';
+  document.getElementById('calendar-mo-title').textContent=schedule?'🗓️ 編輯開課安排':'🗓️ 新增開課安排';
+  document.getElementById('ce-delete').style.display=schedule?'block':'none';
   openMo('calendarMo');
 }
 window.openCalendarEditor = openCalendarEditor;
 function saveCalendarEvent() {
-  var course=document.getElementById('ce-course').value.trim(), status=document.getElementById('ce-status').value, date=document.getElementById('ce-date').value;
-  if(!course){toast('⚠️ 請輸入課程名稱');return;}
-  if(status!=='pending'&&!date){toast('⚠️ 請選擇開課日期，或改為尚未排定');return;}
+  var courseId=document.getElementById('ce-course-id').value||document.getElementById('ce-course').value, status=document.getElementById('ce-status').value, date=document.getElementById('ce-date').value;
+  var course=findCourseById(courseId);
+  if(!course){toast('⚠️ 請選擇既有課程');return;}
+  if(!date){toast('⚠️ 請選擇開課日期');return;}
   var id=document.getElementById('ce-id').value||String(Date.now());
-  var event={id:id,course:course,batch:document.getElementById('ce-batch').value.trim(),date:status==='pending'?'':date,status:status,type:document.getElementById('ce-type').value};
-  var data=lce().slice(), index=data.findIndex(function(e){return e.id===id;});
-  if(index<0)data.push(event);else data[index]=event;
-  sce(data); closeMo('calendarMo'); toast('✅ 開課安排已儲存');
+  var schedule={id:id,batch:document.getElementById('ce-batch').value.trim(),date:date,status:status};
+  var data=lc().slice(), index=data.findIndex(function(c){return String(c.id)===String(course.id);}), schedules=courseSchedules(course).slice(), scheduleIndex=schedules.findIndex(function(item){return item.id===id;});
+  if(scheduleIndex<0)schedules.push(schedule);else schedules[scheduleIndex]=schedule;
+  data[index]=Object.assign({},course,{openingSchedules:schedules}); sc(data); closeMo('calendarMo'); toast('✅ 開課安排已儲存');
 }
 window.saveCalendarEvent = saveCalendarEvent;
 function deleteCalendarEvent() {
   var id=document.getElementById('ce-id').value;
   if(!id||!confirm('確定刪除此開課安排？'))return;
-  sce(lce().filter(function(e){return e.id!==id;})); closeMo('calendarMo'); toast('🗑️ 已刪除開課安排');
+  var data=lc().slice();
+  data=data.map(function(course){var schedules=courseSchedules(course);return schedules.some(function(item){return item.id===id;})?Object.assign({},course,{openingSchedules:schedules.filter(function(item){return item.id!==id;})}):course;});
+  sc(data); closeMo('calendarMo'); toast('🗑️ 已刪除開課安排');
 }
 window.deleteCalendarEvent = deleteCalendarEvent;
 function renderCalendar() {
-  var title=document.getElementById('calendar-title'), grid=document.getElementById('calendar-grid'), pendingBox=document.getElementById('unscheduled-courses');
-  if(!title||!grid||!pendingBox)return;
+  var title=document.getElementById('calendar-title'), grid=document.getElementById('calendar-grid');
+  if(!title||!grid)return;
   var y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),byDate={};
-  lce().filter(function(e){return e.date;}).forEach(function(e){(byDate[e.date]||(byDate[e.date]=[])).push(e);});
+  lc().forEach(function(course){courseSchedules(course).forEach(function(schedule){if(schedule.date)(byDate[schedule.date]||(byDate[schedule.date]=[])).push({id:schedule.id,course:course.name,batch:schedule.batch,status:schedule.status,type:course.type});});});
   Object.keys(byDate).forEach(function(k){byDate[k].sort(function(a,b){return(a.course||'').localeCompare(b.course||'','zh-TW');});});
   title.textContent=y+' 年 '+(m+1)+' 月';
   var first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),cells=Math.ceil((first+days)/7)*7,today=new Date(),html='';
@@ -868,8 +879,6 @@ function renderCalendar() {
     html+='<div class="calendar-day'+(isToday?' today':'')+'"><div class="calendar-date">'+day+'</div>'+entries+'</div>';
   }
   grid.innerHTML=html;
-  var pending=lce().filter(function(e){return e.status==='pending'||!e.date;});
-  pendingBox.innerHTML='<h3>⏳ 尚未排定開課日期（'+pending.length+'）</h3>'+(pending.length?'<div class="unscheduled-list">'+pending.map(function(e){return '<button class="unscheduled-item" onclick="openCalendarEditor(\''+esc(e.id)+'\')">'+esc((e.batch?e.batch+'｜':'')+e.course)+'</button>';}).join('')+'</div>':'<div class="num-hint">目前沒有尚未排定的課程。</div>');
 }
 window.renderCalendar = renderCalendar;
 
@@ -968,6 +977,26 @@ function getSubRows(cid) {
   return rows;
 }
 function clearSubs(cid){document.getElementById(cid).innerHTML='';}
+
+function addScheduleRow(cid,schedule) {
+  var container=document.getElementById(cid); if(!container)return;
+  schedule=schedule||{};
+  var row=document.createElement('div'); row.className='schedule-row';
+  row.innerHTML='<input class="schedule-batch" type="text" placeholder="批次名稱（例：第一批）" value="'+esc(schedule.batch||'')+'"><input class="schedule-date" type="date" value="'+esc(schedule.date||'')+'"><select class="schedule-status"><option value="scheduled"'+((schedule.status||'scheduled')==='scheduled'?' selected':'')+'>已排定</option><option value="open"'+(schedule.status==='open'?' selected':'')+'>已開課</option></select><button type="button" aria-label="刪除批次" onclick="this.parentElement.remove()">✕</button>';
+  row.dataset.id=schedule.id||String(Date.now()+Math.random());
+  container.appendChild(row);
+}
+window.addScheduleRow = addScheduleRow;
+function getScheduleRows(cid) {
+  var schedules=[];
+  document.getElementById(cid).querySelectorAll('.schedule-row').forEach(function(row){
+    var date=row.querySelector('.schedule-date').value;
+    if(!date)return;
+    schedules.push({id:row.dataset.id,batch:row.querySelector('.schedule-batch').value.trim(),date:date,status:row.querySelector('.schedule-status').value});
+  });
+  return schedules;
+}
+function clearSchedules(cid){document.getElementById(cid).innerHTML='';}
 
 function toggleCourseType(prefix) {
   var sel=document.getElementById(prefix+'-type');
@@ -1202,6 +1231,8 @@ function openEdit(btn) {
   document.getElementById('e-name').value=c.name||'';
   document.getElementById('e-cloud').value=c.cloud||'';
   document.getElementById('e-note').value=c.note||'';
+  clearSchedules('e-schedules');
+  courseSchedules(c).forEach(function(schedule){addScheduleRow('e-schedules',schedule);});
   refreshSels(); document.getElementById('e-cat').value=c.cat||'';
   clearYt('e-yt');
   var yt=c.ytLinks&&c.ytLinks.length?c.ytLinks:(c.yt?[{label:'YT',url:c.yt}]:[]);
@@ -1224,8 +1255,9 @@ function saveEdit() {
   var subs=type==='live'?getSubRows('e-subs'):[];
   var cat=document.getElementById('e-cat').value.trim();
   var note=document.getElementById('e-note').value.trim();
+  var openingSchedules=getScheduleRows('e-schedules');
   var data=lc().slice(); var i=data.findIndex(function(z){return z.id===id;}); if(i===-1) return;
-  data[i]=Object.assign({},data[i],{name:name,type:type,ytLinks:yt,cloud:cloud,subs:subs,cat:cat,note:note});
+  data[i]=Object.assign({},data[i],{name:name,type:type,ytLinks:yt,cloud:cloud,subs:subs,cat:cat,note:note,openingSchedules:openingSchedules});
   sc(data); closeMo('editMo'); renderList(); toast('✅ 已儲存！');
 }
 window.saveEdit = saveEdit;
