@@ -536,7 +536,7 @@ button{touch-action:manipulation;}
   <input type="hidden" id="e-id"/>
   <div class="fg"><label>課程類型</label><select id="e-type" onchange="toggleCourseType('e')"><option value="normal">一般課程</option><option value="live">直播課</option></select></div>
   <div class="fg"><label>課程名稱 *</label><input id="e-name" type="text"/></div>
-  <div class="fg"><label>🗓️ 開課批次</label><div id="e-schedules"></div><button class="btn-yt" type="button" onclick="addScheduleRow('e-schedules',{})">＋ 新增開課批次</button><div class="num-hint">可選開課日、第二批、第三批、第四批或完結；儲存後會同步到日曆。</div></div>
+  <div class="fg"><label>🗓️ 開課批次</label><textarea id="e-schedule-bulk" rows="3" placeholder="可直接貼上，每行一筆：&#10;開課日｜2026/08/27&#10;第二批｜2026/09/15&#10;完結｜2026/10/30"></textarea><button class="btn-sm" type="button" style="width:100%;margin:7px 0;" onclick="parseBulkSchedules()">📋 解析並新增批次</button><div id="e-schedules"></div><button class="btn-yt" type="button" onclick="addScheduleRow('e-schedules',{})">＋ 新增開課批次</button><div class="num-hint">可選開課日、第二批、第三批、第四批或完結；貼上後會保留既有批次，並新增解析到的內容。</div></div>
   <div class="fg" id="e-yt-wrap"><label>🎬 YouTube 連結</label><div id="e-yt"></div>
     <button class="btn-yt" onclick="addYtRow('e-yt','','')">＋ 新增 YouTube 連結</button>
   </div>
@@ -1017,6 +1017,21 @@ function getScheduleRows(cid) {
   return schedules;
 }
 function clearSchedules(cid){document.getElementById(cid).innerHTML='';}
+function parseBulkSchedules() {
+  var input=document.getElementById('e-schedule-bulk'), lines=input.value.split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean), added=0, invalid=0;
+  lines.forEach(function(line,index){
+    var match=line.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    if(!match){invalid++;return;}
+    var year=Number(match[1]),month=Number(match[2]),day=Number(match[3]),date=new Date(year,month-1,day);
+    if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day){invalid++;return;}
+    var batchMatch=line.match(/開課日|第二批|第三批|第四批|完結/);
+    var batch=batchMatch?batchMatch[0]:(index===0?'開課日':'');
+    addScheduleRow('e-schedules',{batch:batch,date:year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),status:'scheduled'}); added++;
+  });
+  if(added){input.value='';toast('✅ 已新增 '+added+' 筆開課批次'+(invalid?'｜'+invalid+' 行無法辨識':'')+'');}
+  else toast('⚠️ 找不到可辨識的日期，請使用 YYYY/MM/DD 格式');
+}
+window.parseBulkSchedules = parseBulkSchedules;
 
 function toggleCourseType(prefix) {
   var sel=document.getElementById(prefix+'-type');
@@ -1252,6 +1267,7 @@ function openEdit(btn) {
   document.getElementById('e-name').value=c.name||'';
   document.getElementById('e-cloud').value=c.cloud||'';
   document.getElementById('e-note').value=c.note||'';
+  document.getElementById('e-schedule-bulk').value='';
   clearSchedules('e-schedules');
   courseSchedules(c).forEach(function(schedule){addScheduleRow('e-schedules',schedule);});
   refreshSels(); document.getElementById('e-cat').value=c.cat||'';
