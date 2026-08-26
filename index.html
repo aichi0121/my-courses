@@ -122,6 +122,7 @@ button{touch-action:manipulation;}
 .lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;margin-bottom:7px;}
 .badge,.bst,.pr-st,.ci-tag{font-size:.68rem;font-weight:850;padding:3px 8px;border-radius:999px;white-space:nowrap;}
 .byt{background:#fff1f1;color:#d83838;}.bcl{background:#e7f7ff;color:#2274a5;}.bnt{background:#e9fbf0;color:#1b7e51;}.bnl{background:#fff5f5;color:#c53030;border:1px solid #fed7d7;margin-bottom:7px;display:inline-flex;}
+.schedule-summary{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}.schedule-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:7px;background:#edf2ff;color:#405da9;font-size:.69rem;font-weight:800;}.schedule-chip.today{background:#e5f8f4;color:#08736e;}.schedule-chip.open{background:#e9f8ef;color:#18764c;}.schedule-chip.done{background:#edf0f4;color:#5d6a7b;}.schedule-chip.no-link{background:#fff2f2;color:#c53030;}
 .ltext{font-size:.8rem;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 .ltext a{color:var(--accent);text-decoration:none;}
 .bcopy{padding:5px 9px;font-size:.72rem;background:var(--accent-soft);color:var(--accent);border:none;border-radius:7px;cursor:pointer;font-weight:850;white-space:nowrap;}
@@ -535,7 +536,7 @@ button{touch-action:manipulation;}
   <input type="hidden" id="e-id"/>
   <div class="fg"><label>課程類型</label><select id="e-type" onchange="toggleCourseType('e')"><option value="normal">一般課程</option><option value="live">直播課</option></select></div>
   <div class="fg"><label>課程名稱 *</label><input id="e-name" type="text"/></div>
-  <div class="fg"><label>🗓️ 開課批次</label><div id="e-schedules"></div><button class="btn-yt" type="button" onclick="addScheduleRow('e-schedules',{})">＋ 新增開課批次</button><div class="num-hint">可建立第一批、第二批等多個開課日期；儲存後會同步到日曆。</div></div>
+  <div class="fg"><label>🗓️ 開課批次</label><div id="e-schedules"></div><button class="btn-yt" type="button" onclick="addScheduleRow('e-schedules',{})">＋ 新增開課批次</button><div class="num-hint">可選開課日、第二批、第三批、第四批或完結；儲存後會同步到日曆。</div></div>
   <div class="fg" id="e-yt-wrap"><label>🎬 YouTube 連結</label><div id="e-yt"></div>
     <button class="btn-yt" onclick="addYtRow('e-yt','','')">＋ 新增 YouTube 連結</button>
   </div>
@@ -555,12 +556,13 @@ button{touch-action:manipulation;}
   <input type="hidden" id="ce-id"/>
   <input type="hidden" id="ce-course-id"/>
   <div class="fg"><label>既有課程 *</label><select id="ce-course"></select><div class="num-hint">開課批次會直接儲存在這堂既有課程中。</div></div>
-  <div class="fg"><label>批次名稱（選填）</label><input id="ce-batch" type="text" placeholder="例：第一批、第二批"/></div>
+  <div class="fg"><label>批次名稱（選填）</label><input id="ce-batch" type="text" list="schedule-batch-options" placeholder="例：開課日、第二批、完結"/></div>
   <div class="fg"><label>開課日期</label><input id="ce-date" type="date"/></div>
   <div class="fg"><label>狀態</label><select id="ce-status"><option value="scheduled">已排定／尚未開課</option><option value="open">已開課</option></select></div>
   <div class="macts"><button class="mcancel" onclick="closeMo('calendarMo')">取消</button><button class="msave" onclick="saveCalendarEvent()">💾 儲存</button></div>
   <button class="btn-sm" id="ce-delete" style="display:none;width:100%;margin-top:9px;color:#c53030;background:#fff5f5;border-color:#fecaca;" onclick="deleteCalendarEvent()">🗑️ 刪除此安排</button>
 </div></div>
+<datalist id="schedule-batch-options"><option value="開課日"></option><option value="第二批"></option><option value="第三批"></option><option value="第四批"></option><option value="完結"></option></datalist>
 <div class="mo" id="editBuyerMo"><div class="mbox">
   <h3>✏️ 編輯購買人</h3>
   <input type="hidden" id="eb-id"/>
@@ -821,6 +823,22 @@ function moveCalendar(delta) { calendarMonth=new Date(calendarMonth.getFullYear(
 window.moveCalendar = moveCalendar;
 function courseSchedules(course) { return Array.isArray(course.openingSchedules)?course.openingSchedules:[]; }
 function findCourseById(id) { return lc().find(function(c){return String(c.id)===String(id);}); }
+function localTodayKey() { var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function scheduleState(schedule) {
+  var batch=String(schedule.batch||'');
+  if(/完結|結束/.test(batch)) return {label:'已完結',className:'done'};
+  var today=localTodayKey();
+  if(schedule.status==='open'||schedule.date<today) return {label:'已開課',className:'open'};
+  if(schedule.date===today) return {label:'今天開課',className:'today'};
+  var start=new Date(schedule.date+'T00:00:00'), now=new Date(today+'T00:00:00'), days=Math.ceil((start-now)/86400000);
+  return {label:days+' 天後開課',className:''};
+}
+function formatScheduleDate(date) { var p=String(date||'').split('-'); return p.length===3?Number(p[1])+'/'+Number(p[2]):''; }
+function renderScheduleSummary(course) {
+  var schedules=courseSchedules(course).slice().sort(function(a,b){return String(a.date).localeCompare(String(b.date));});
+  if(!schedules.length)return '';
+  return '<div class="schedule-summary">'+schedules.map(function(schedule){var state=scheduleState(schedule);return '<span class="schedule-chip '+state.className+'">🗓️ '+esc(schedule.batch||'開課日')+' '+esc(formatScheduleDate(schedule.date))+'｜'+esc(state.label)+'</span>';}).join('')+(!hasLink(course)?'<span class="schedule-chip no-link">⚠️ 尚無連結</span>':'')+'</div>';
+}
 function renderCalendarCourseSelect(selectedId) {
   var select=document.getElementById('ce-course');
   var courses=sortArr(lc());
@@ -874,7 +892,7 @@ function renderCalendar() {
     var day=i-first;
     if(day<1||day>days){html+='<div class="calendar-day empty-day"></div>';continue;}
     var key=calendarDateKey(y,m,day),list=byDate[key]||[],isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day;
-    var entries=list.slice(0,3).map(function(e){return '<button class="calendar-event '+(e.type==='live'?'live ':'')+(e.status==='open'?'done':'')+'" title="'+esc(e.course)+'" onclick="openCalendarEditor(\''+esc(e.id)+'\')">'+esc((e.batch?e.batch+'｜':'')+e.course)+'</button>';}).join('');
+    var entries=list.slice(0,3).map(function(e){var state=scheduleState(e);return '<button class="calendar-event '+(e.type==='live'?'live ':'')+(state.className==='open'||state.className==='done'?'done':'')+'" title="'+esc(e.course)+'｜'+esc(state.label)+'" onclick="openCalendarEditor(\''+esc(e.id)+'\')">'+esc((e.batch?e.batch+'｜':'')+e.course+' · '+state.label)+'</button>';}).join('');
     if(list.length>3)entries+='<div class="calendar-more">另有 '+(list.length-3)+' 筆</div>';
     html+='<div class="calendar-day'+(isToday?' today':'')+'"><div class="calendar-date">'+day+'</div>'+entries+'</div>';
   }
@@ -982,7 +1000,7 @@ function addScheduleRow(cid,schedule) {
   var container=document.getElementById(cid); if(!container)return;
   schedule=schedule||{};
   var row=document.createElement('div'); row.className='schedule-row';
-  row.innerHTML='<input class="schedule-batch" type="text" placeholder="批次名稱（例：第一批）" value="'+esc(schedule.batch||'')+'"><input class="schedule-date" type="date" value="'+esc(schedule.date||'')+'"><select class="schedule-status"><option value="scheduled"'+((schedule.status||'scheduled')==='scheduled'?' selected':'')+'>已排定</option><option value="open"'+(schedule.status==='open'?' selected':'')+'>已開課</option></select><button type="button" aria-label="刪除批次" onclick="this.parentElement.remove()">✕</button>';
+  row.innerHTML='<input class="schedule-batch" type="text" list="schedule-batch-options" placeholder="例：開課日、第二批、完結" value="'+esc(schedule.batch||'')+'"><input class="schedule-date" type="date" value="'+esc(schedule.date||'')+'"><select class="schedule-status"><option value="scheduled"'+((schedule.status||'scheduled')==='scheduled'?' selected':'')+'>已排定</option><option value="open"'+(schedule.status==='open'?' selected':'')+'>已開課</option></select><button type="button" aria-label="刪除批次" onclick="this.parentElement.remove()">✕</button>';
   row.dataset.id=schedule.id||String(Date.now()+Math.random());
   container.appendChild(row);
 }
@@ -1103,8 +1121,9 @@ function renderCard(c) {
   var subH=subItems?'<div class="sub-list">'+subItems+'</div>':'';
   var ntH=c.note?'<div class="lr"><span class="badge bnt">備註</span><span class="ltext" style="white-space:normal">'+esc(c.note)+'</span></div>':'';
   var nlB=nl?'<div class="badge bnl">⚠️ 尚無連結</div>':'';
+  var scheduleH=renderScheduleSummary(c);
   var cpB=nl?'<button class="bca" disabled>📋 複製全部連結</button>':'<button class="bca" data-id="'+c.id+'" onclick="cpCard(this)">📋 複製全部連結</button>';
-  return '<div class="cc'+(nl?' nl':'')+'"><div class="ctop"><div class="ctitle">'+esc(c.name)+'</div><div class="cbtns"><button class="cbtn" data-id="'+c.id+'" onclick="openEdit(this)">✏️</button><button class="cbtn" data-id="'+c.id+'" onclick="delC(this)">🗑️</button></div></div>'+nlB+ytH+clH+subH+ntH+cpB+'</div>';
+  return '<div class="cc'+(nl?' nl':'')+'"><div class="ctop"><div class="ctitle">'+esc(c.name)+'</div><div class="cbtns"><button class="cbtn" data-id="'+c.id+'" onclick="openEdit(this)">✏️</button><button class="cbtn" data-id="'+c.id+'" onclick="delC(this)">🗑️</button></div></div>'+nlB+scheduleH+ytH+clH+subH+ntH+cpB+'</div>';
 }
 
 function cpBtn(btn){var url=btn.dataset.url;clip(url,function(){btn.textContent='✓';btn.classList.add('ok');setTimeout(function(){btn.textContent='複製';btn.classList.remove('ok');},1600);toast('📋 已複製！');});}
