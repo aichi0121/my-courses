@@ -122,7 +122,7 @@ button{touch-action:manipulation;}
 .lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;margin-bottom:7px;}
 .badge,.bst,.pr-st,.ci-tag{font-size:.68rem;font-weight:850;padding:3px 8px;border-radius:999px;white-space:nowrap;}
 .byt{background:#fff1f1;color:#d83838;}.bcl{background:#e7f7ff;color:#2274a5;}.bnt{background:#e9fbf0;color:#1b7e51;}.bnl{background:#fff5f5;color:#c53030;border:1px solid #fed7d7;margin-bottom:7px;display:inline-flex;}
-.schedule-summary{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}.schedule-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:7px;background:#edf2ff;color:#405da9;font-size:.69rem;font-weight:800;}.schedule-chip.today{background:#e5f8f4;color:#08736e;}.schedule-chip.open{background:#e9f8ef;color:#18764c;}.schedule-chip.done{background:#edf0f4;color:#5d6a7b;}.schedule-chip.no-link{background:#fff2f2;color:#c53030;}
+.schedule-summary{margin:7px 0 9px;font-size:.76rem;color:var(--sub);font-weight:750;}.schedule-summary strong{color:#3f578e;}.schedule-summary .opening-state{margin-left:6px;padding-left:7px;border-left:1px solid var(--border);}
 .ltext{font-size:.8rem;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 .ltext a{color:var(--accent);text-decoration:none;}
 .bcopy{padding:5px 9px;font-size:.72rem;background:var(--accent-soft);color:var(--accent);border:none;border-radius:7px;cursor:pointer;font-weight:850;white-space:nowrap;}
@@ -835,9 +835,11 @@ function scheduleState(schedule) {
 }
 function formatScheduleDate(date) { var p=String(date||'').split('-'); return p.length===3?Number(p[1])+'/'+Number(p[2]):''; }
 function renderScheduleSummary(course) {
-  var schedules=courseSchedules(course).slice().sort(function(a,b){return String(a.date).localeCompare(String(b.date));});
-  if(!schedules.length)return '';
-  return '<div class="schedule-summary">'+schedules.map(function(schedule){var state=scheduleState(schedule);return '<span class="schedule-chip '+state.className+'">🗓️ '+esc(schedule.batch||'開課日')+' '+esc(formatScheduleDate(schedule.date))+'｜'+esc(state.label)+'</span>';}).join('')+(!hasLink(course)?'<span class="schedule-chip no-link">⚠️ 尚無連結</span>':'')+'</div>';
+  if(hasLink(course))return '';
+  var schedule=courseSchedules(course).find(function(item){return item.batch==='開課日';});
+  if(!schedule)return '';
+  var state=scheduleState(schedule);
+  return '<div class="schedule-summary">🗓️ <strong>開課日 '+esc(formatScheduleDate(schedule.date))+'</strong><span class="opening-state">'+esc(state.label)+'</span></div>';
 }
 function renderCalendarCourseSelect(selectedId) {
   var select=document.getElementById('ce-course');
