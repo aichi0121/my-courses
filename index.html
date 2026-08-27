@@ -834,6 +834,13 @@ function scheduleState(schedule) {
   return {label:days+' 天後開課',className:''};
 }
 function formatScheduleDate(date) { var p=String(date||'').split('-'); return p.length===3?Number(p[1])+'/'+Number(p[2]):''; }
+function courseOpeningLabel(course) {
+  if(!course) return '';
+  var schedules=courseSchedules(course);
+  var schedule=schedules.find(function(item){return item.batch==='開課日';})||schedules.slice().sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''));})[0];
+  if(!schedule||!schedule.date) return '';
+  return '｜🗓 '+formatScheduleDate(schedule.date)+' 開課';
+}
 function renderScheduleSummary(course) {
   if(hasLink(course))return '';
   var schedule=courseSchedules(course).find(function(item){return item.batch==='開課日';});
@@ -1746,7 +1753,7 @@ function renderGroupCourseRows(nums, sentNums, gid, withCheckbox) {
     else if(sent) tag='<span class="ci-tag ci-sent">✓ 已發</span>';
     else tag='<span class="ci-tag ci-ready">可發送</span>';
     var cb=withCheckbox?'<input type="checkbox" class="ci-cb" data-gid="'+esc(gid||'')+'" data-num="'+esc(n)+'" onchange="toggleGroupSent(this)"'+(sent?' checked':'')+'/>':'';
-    return '<div class="ci">'+cb+'<span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name):'#'+esc(n))+'</span>'+tag+'</div>';
+    return '<div class="ci">'+cb+'<span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name)+esc(courseOpeningLabel(c)):'#'+esc(n))+'</span>'+tag+'</div>';
   }).join('');
 }
 
@@ -1761,7 +1768,7 @@ function renderJoinCourseRows(nums, receivedNums) {
     else if(!hasLink(c)) tag='<span class="ci-tag ci-nolink">⏳ 未開課</span>';
     else if(received) tag='<span class="ci-tag ci-sent">✓ 已取得</span>';
     else tag='<span class="ci-tag ci-ready">已開課</span>';
-    return '<div class="ci"><span></span><span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name):'#'+esc(n))+'</span>'+tag+'</div>';
+    return '<div class="ci"><span></span><span class="ci-num">#'+esc(n)+'</span><span class="ci-name">'+(c?esc(c.name)+esc(courseOpeningLabel(c)):'#'+esc(n))+'</span>'+tag+'</div>';
   }).join('');
 }
 
@@ -2538,7 +2545,7 @@ function renderBuyerCard(buyer, mode, searchQuery) {
       } else {
         tag='<span class="ci-tag ci-ready">待發</span>';
       }
-      var name=c?esc(c.name):'#'+n;
+      var name=c?esc(c.name)+esc(courseOpeningLabel(c)):'#'+n;
       return '<div class="ci">'+cb+'<span class="ci-num">#'+n+'</span><span class="ci-name">'+name+'</span>'+tag+'</div>';
     }).join('');
 var sendBtnHtml='';
