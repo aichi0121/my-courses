@@ -826,8 +826,14 @@ function findCourseById(id) { return lc().find(function(c){return String(c.id)==
 function localTodayKey() { var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function scheduleState(schedule) {
   var batch=String(schedule.batch||'');
-  if(/完結|結束/.test(batch)) return {label:'已完結',className:'done'};
   var today=localTodayKey();
+  var isEnding=/完結|結束/.test(batch);
+  if(isEnding){
+    if(schedule.date<today) return {label:'已完結',className:'done'};
+    if(schedule.date===today) return {label:'今天完結',className:'today'};
+    var endStart=new Date(schedule.date+'T00:00:00'), endNow=new Date(today+'T00:00:00'), endDays=Math.ceil((endStart-endNow)/86400000);
+    return {label:endDays+' 天後完結',className:''};
+  }
   if(schedule.status==='open'||schedule.date<today) return {label:'已開課',className:'open'};
   if(schedule.date===today) return {label:'今天開課',className:'today'};
   var start=new Date(schedule.date+'T00:00:00'), now=new Date(today+'T00:00:00'), days=Math.ceil((start-now)/86400000);
