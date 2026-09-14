@@ -66,7 +66,7 @@ button{touch-action:manipulation;}
 .tb:hover{background:#f4f7fb;color:var(--text);}
 .tb.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 18px rgba(79,111,232,.20);}
 .tc{display:none;}.tc.on{display:block;}
-.calendar-card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px;}.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}.calendar-head h2{font-size:1rem;font-weight:850;}.calendar-nav{width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--accent);font-size:1.15rem;font-weight:850;cursor:pointer;}.calendar-week,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}.calendar-week span{text-align:center;font-size:.68rem;font-weight:850;color:var(--muted);padding:4px 0;}.calendar-day{min-height:112px;padding:6px;border:1px solid var(--border);background:#fff;overflow:hidden;}.calendar-day.empty-day{background:#f8fafc;}.calendar-day.today{background:#f1f5ff;}.calendar-date{font-size:.72rem;font-weight:850;color:var(--sub);margin-bottom:5px;}.today .calendar-date{color:var(--accent);}.calendar-event{display:block;width:100%;border:none;border-left:3px solid var(--accent);border-radius:4px;background:var(--accent-soft);color:#2b478f;text-align:left;padding:4px 5px;margin:4px 0;font-size:.68rem;font-weight:750;line-height:1.3;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.calendar-event.live{border-left-color:var(--accent2);background:#e6f8f5;color:#08736e;}.calendar-event.done{opacity:.56;text-decoration:line-through;}.calendar-more{font-size:.67rem;color:var(--sub);font-weight:800;padding:2px 4px;}.calendar-tools{display:flex;justify-content:flex-end;margin-bottom:12px;}.calendar-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--sub);margin:13px 0 0;}.calendar-legend span{display:flex;align-items:center;gap:5px;}.calendar-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}.calendar-dot.live{background:var(--accent2);}.calendar-dot.pending{background:#d18b19;}.unscheduled{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}.unscheduled h3{font-size:.82rem;color:var(--sub);margin-bottom:8px;}.unscheduled-list{display:flex;flex-wrap:wrap;gap:7px;}.unscheduled-item{border:1px solid #f2d08a;background:#fff8e8;color:#986109;padding:6px 9px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;}
+.calendar-card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px;}.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}.calendar-head h2{font-size:1rem;font-weight:850;}.calendar-nav{width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--accent);font-size:1.15rem;font-weight:850;cursor:pointer;}.calendar-week,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}.calendar-week span{text-align:center;font-size:.68rem;font-weight:850;color:var(--muted);padding:4px 0;}.calendar-day{min-height:112px;padding:6px;border:1px solid var(--border);background:#fff;overflow:hidden;cursor:pointer;transition:background .15s;}.calendar-day:not(.empty-day):hover,.calendar-day.selected{background:#eef3ff;}.calendar-day.empty-day{background:#f8fafc;}.calendar-day.today{background:#f1f5ff;}.calendar-date{font-size:.72rem;font-weight:850;color:var(--sub);margin-bottom:5px;}.today .calendar-date{color:var(--accent);}.calendar-event{display:block;width:100%;border:none;border-left:3px solid var(--accent);border-radius:4px;background:var(--accent-soft);color:#2b478f;text-align:left;padding:4px 5px;margin:4px 0;font-size:.68rem;font-weight:750;line-height:1.3;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.calendar-event.live{border-left-color:var(--accent2);background:#e6f8f5;color:#08736e;}.calendar-event.done{opacity:.56;text-decoration:line-through;}.calendar-more{font-size:.67rem;color:var(--sub);font-weight:800;padding:2px 4px;}.calendar-tools{display:flex;justify-content:flex-end;margin-bottom:12px;}.calendar-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--sub);margin:13px 0 0;}.calendar-legend span{display:flex;align-items:center;gap:5px;}.calendar-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}.calendar-dot.live{background:var(--accent2);}.calendar-dot.pending{background:#d18b19;}.calendar-detail{margin-top:14px;padding:14px;border-top:1px solid var(--border);}.calendar-detail h3{font-size:.9rem;margin-bottom:9px;}.calendar-detail-card{padding:11px 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft);margin-top:8px;}.calendar-detail-card strong{font-size:.83rem;}.calendar-detail-meta{font-size:.74rem;color:var(--sub);margin-top:5px;}.calendar-detail .bcopy{margin-top:9px;}.unscheduled{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}.unscheduled h3{font-size:.82rem;color:var(--sub);margin-bottom:8px;}.unscheduled-list{display:flex;flex-wrap:wrap;gap:7px;}.unscheduled-item{border:1px solid #f2d08a;background:#fff8e8;color:#986109;padding:6px 9px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;}
 .card,.qcard,.cc,.buyer-card,.group-card{
   background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);
 }
@@ -378,6 +378,7 @@ button{touch-action:manipulation;}
       <div class="calendar-head"><button class="calendar-nav" onclick="moveCalendar(-1)" aria-label="上個月">‹</button><h2 id="calendar-title"></h2><button class="calendar-nav" onclick="moveCalendar(1)" aria-label="下個月">›</button></div>
       <div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
       <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="calendar-detail" id="calendar-detail"><div class="qempty" style="padding:10px 0;">點選日期，查看當天課程安排</div></div>
       <div class="calendar-legend"><span><i class="calendar-dot"></i>一般開課</span><span><i class="calendar-dot live"></i>直播課</span></div>
     </div>
   </div>
@@ -759,7 +760,7 @@ onAuthStateChanged(auth, async (user) => {
 
 // ── 以下為原有邏輯（完整保留）──
 var batchData = [], activeCat = 'all';
-var calendarMonth = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+var calendarMonth = new Date(new Date().getFullYear(),new Date().getMonth(),1), selectedCalendarDate='';
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m) { var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2000); }
@@ -823,7 +824,7 @@ function goTab(tab,btn) {
 window.goTab = goTab;
 
 function calendarDateKey(y,m,d) { return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
-function moveCalendar(delta) { calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); renderCalendar(); }
+function moveCalendar(delta) { calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); selectedCalendarDate=''; renderCalendar(); }
 window.moveCalendar = moveCalendar;
 function courseSchedules(course) { return Array.isArray(course.openingSchedules)?course.openingSchedules:[]; }
 function findCourseById(id) { return lc().find(function(c){return String(c.id)===String(id);}); }
@@ -899,23 +900,40 @@ function deleteCalendarEvent() {
   sc(data); closeMo('calendarMo'); toast('🗑️ 已刪除開課安排');
 }
 window.deleteCalendarEvent = deleteCalendarEvent;
+function selectCalendarDate(date) {
+  selectedCalendarDate=date;
+  renderCalendar();
+}
+window.selectCalendarDate = selectCalendarDate;
+function renderCalendarDetail(date, events) {
+  var detail=document.getElementById('calendar-detail'); if(!detail) return;
+  if(!date){detail.innerHTML='<div class="qempty" style="padding:10px 0;">點選日期，查看當天課程安排</div>';return;}
+  var heading='🗓️ '+date.replace(/-/g,'/')+' 的課程安排';
+  if(!events.length){detail.innerHTML='<h3>'+heading+'</h3><div class="qempty" style="padding:10px 0;">這天沒有課程安排</div>';return;}
+  detail.innerHTML='<h3>'+heading+'</h3>'+events.map(function(event){
+    var state=scheduleState(event.schedule), course=event.course;
+    var linkButton=hasLink(course)?'<button class="bcopy" data-id="'+course.id+'" onclick="cpCard(this)">📋 複製這堂課全部連結</button>':'';
+    return '<div class="calendar-detail-card"><strong>'+esc(course.name)+'</strong><div class="calendar-detail-meta">'+esc(event.schedule.batch||'課程安排')+'｜'+esc(state.label)+'</div>'+linkButton+'</div>';
+  }).join('');
+}
 function renderCalendar() {
   var title=document.getElementById('calendar-title'), grid=document.getElementById('calendar-grid');
   if(!title||!grid)return;
   var y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),byDate={};
-  lc().forEach(function(course){courseSchedules(course).forEach(function(schedule){if(schedule.date)(byDate[schedule.date]||(byDate[schedule.date]=[])).push({id:schedule.id,course:course.name,batch:schedule.batch,status:schedule.status,type:course.type});});});
-  Object.keys(byDate).forEach(function(k){byDate[k].sort(function(a,b){return(a.course||'').localeCompare(b.course||'','zh-TW');});});
+  lc().forEach(function(course){courseSchedules(course).forEach(function(schedule){if(schedule.date)(byDate[schedule.date]||(byDate[schedule.date]=[])).push({id:schedule.id,course:course,schedule:schedule});});});
+  Object.keys(byDate).forEach(function(k){byDate[k].sort(function(a,b){return(a.course.name||'').localeCompare(b.course.name||'','zh-TW');});});
   title.textContent=y+' 年 '+(m+1)+' 月';
   var first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),cells=Math.ceil((first+days)/7)*7,today=new Date(),html='';
   for(var i=0;i<cells;i++){
     var day=i-first;
     if(day<1||day>days){html+='<div class="calendar-day empty-day"></div>';continue;}
-    var key=calendarDateKey(y,m,day),list=byDate[key]||[],isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day;
-    var entries=list.slice(0,3).map(function(e){var state=scheduleState(e);return '<button class="calendar-event '+(e.type==='live'?'live ':'')+(state.className==='open'||state.className==='done'?'done':'')+'" title="'+esc(e.course)+'｜'+esc(state.label)+'" onclick="openCalendarEditor(\''+esc(e.id)+'\')">'+esc((e.batch?e.batch+'｜':'')+e.course+' · '+state.label)+'</button>';}).join('');
+    var key=calendarDateKey(y,m,day),list=byDate[key]||[],isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day, isSelected=key===selectedCalendarDate;
+    var entries=list.slice(0,3).map(function(e){var state=scheduleState(e.schedule);return '<button class="calendar-event '+(e.course.type==='live'?'live ':'')+(state.className==='open'||state.className==='done'?'done':'')+'" title="'+esc(e.course.name)+'｜'+esc(state.label)+'" onclick="selectCalendarDate(\''+key+'\')">'+esc((e.schedule.batch?e.schedule.batch+'｜':'')+e.course.name+' · '+state.label)+'</button>';}).join('');
     if(list.length>3)entries+='<div class="calendar-more">另有 '+(list.length-3)+' 筆</div>';
-    html+='<div class="calendar-day'+(isToday?' today':'')+'"><div class="calendar-date">'+day+'</div>'+entries+'</div>';
+    html+='<div class="calendar-day'+(isToday?' today':'')+(isSelected?' selected':'')+'" onclick="selectCalendarDate(\''+key+'\')"><div class="calendar-date">'+day+'</div>'+entries+'</div>';
   }
   grid.innerHTML=html;
+  renderCalendarDetail(selectedCalendarDate,byDate[selectedCalendarDate]||[]);
 }
 window.renderCalendar = renderCalendar;
 
