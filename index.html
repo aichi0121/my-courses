@@ -913,8 +913,8 @@ function renderCalendarDetail(date, events) {
   detail.innerHTML='<h3>'+heading+'</h3>'+events.map(function(event){
     var state=scheduleState(event.schedule), course=event.course;
     var linkButton=hasLink(course)?'<button class="bcopy" data-id="'+course.id+'" onclick="cpCard(this)">📋 複製這堂課全部連結</button>':'';
-    var editButton='<button class="bcopy" style="margin-left:6px;" onclick="openCalendarEditor(\''+esc(event.id)+'\')">✏️ 編輯這筆安排</button>';
-    return '<div class="calendar-detail-card"><strong>'+esc(course.name)+'</strong><div class="calendar-detail-meta">'+esc(event.schedule.batch||'課程安排')+'｜'+esc(state.label)+'</div>'+linkButton+editButton+'</div>';
+    var editButton='<button class="cbtn" title="編輯這筆安排" aria-label="編輯這筆安排" onclick="openCalendarEditor(\''+esc(event.id)+'\')">✏️</button>';
+    return '<div class="calendar-detail-card"><div style="display:flex;align-items:center;gap:5px;">'+editButton+'<strong>'+esc(course.name)+'</strong></div><div class="calendar-detail-meta">'+esc(event.schedule.batch||'課程安排')+'｜'+esc(state.label)+'</div>'+linkButton+'</div>';
   }).join('');
 }
 function renderCalendar() {
