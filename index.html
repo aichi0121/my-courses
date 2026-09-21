@@ -40,6 +40,13 @@ body{
 }
 button,input,select,textarea{font:inherit;}
 button{touch-action:manipulation;}
+select{
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%)!important;
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%!important;
+  background-size:6px 6px,6px 6px!important;background-repeat:no-repeat!important;
+  padding-right:40px!important;
+}
 .wrap,.hd{width:min(1180px,100%);margin:0 auto;}
 .hd{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -67,7 +74,7 @@ button{touch-action:manipulation;}
 .tb.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 18px rgba(79,111,232,.20);}
 .tc{display:none;}.tc.on{display:block;}
 .calendar-card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px;}.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}.calendar-head h2{font-size:1rem;font-weight:850;}.calendar-nav{width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--accent);font-size:1.15rem;font-weight:850;cursor:pointer;}.calendar-week,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}.calendar-week span{text-align:center;font-size:.68rem;font-weight:850;color:var(--muted);padding:4px 0;}.calendar-day{min-height:112px;padding:6px;border:1px solid var(--border);background:#fff;overflow:hidden;cursor:pointer;transition:background .15s;}.calendar-day:not(.empty-day):hover,.calendar-day.selected{background:#eef3ff;}.calendar-day.empty-day{background:#f8fafc;}.calendar-day.today{background:#f1f5ff;}.calendar-date{font-size:.72rem;font-weight:850;color:var(--sub);margin-bottom:5px;}.today .calendar-date{color:var(--accent);}.calendar-event{display:block;width:100%;border:none;border-left:3px solid var(--accent);border-radius:4px;background:var(--accent-soft);color:#2b478f;text-align:left;padding:4px 5px;margin:4px 0;font-size:.68rem;font-weight:750;line-height:1.3;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.calendar-event.live{border-left-color:var(--accent2);background:#e6f8f5;color:#08736e;}.calendar-event.done{opacity:.56;text-decoration:line-through;}.calendar-more{font-size:.67rem;color:var(--sub);font-weight:800;padding:2px 4px;}.calendar-tools{display:flex;justify-content:flex-end;margin-bottom:12px;}.calendar-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--sub);margin:13px 0 0;}.calendar-legend span{display:flex;align-items:center;gap:5px;}.calendar-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}.calendar-dot.live{background:var(--accent2);}.calendar-dot.pending{background:#d18b19;}.calendar-detail{margin-top:14px;padding:14px;border-top:1px solid var(--border);}.calendar-detail h3{font-size:.9rem;margin-bottom:9px;}.calendar-detail-card{padding:11px 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft);margin-top:8px;}.calendar-detail-card strong{font-size:.83rem;}.calendar-detail-meta{font-size:.74rem;color:var(--sub);margin-top:5px;}.calendar-detail .bcopy{margin-top:9px;}.unscheduled{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}.unscheduled h3{font-size:.82rem;color:var(--sub);margin-bottom:8px;}.unscheduled-list{display:flex;flex-wrap:wrap;gap:7px;}.unscheduled-item{border:1px solid #f2d08a;background:#fff8e8;color:#986109;padding:6px 9px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;}
-.notice-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px;}.notice-stat{padding:14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.92);box-shadow:var(--shadow-sm);}.notice-stat strong{display:block;font-size:1.45rem;line-height:1.1;margin-bottom:5px;}.notice-stat span{font-size:.74rem;color:var(--sub);font-weight:800;}.notice-stat.updating strong{color:var(--accent);}.notice-stat.reupload strong{color:var(--amber);}.notice-stat.total strong{color:var(--text);}.notice-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:8px;margin-bottom:12px}.notice-toolbar input,.notice-toolbar select{width:100%;min-height:42px;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);outline:none}.notice-list{display:grid;gap:10px}.notice-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:14px;box-shadow:var(--shadow-sm)}.notice-card.reupload{border-left-color:var(--amber)}.notice-card.done{border-left-color:var(--green);opacity:.72}.notice-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.notice-course{font-size:.94rem;font-weight:850}.notice-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}.notice-status{font-size:.7rem;font-weight:850;padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}.notice-status.reupload{background:#fff3d8;color:#a06108}.notice-status.done{background:#dff8ea;color:#14794c}.notice-date{font-size:.7rem;color:var(--muted)}.notice-note{font-size:.8rem;color:var(--text);background:var(--panel-soft);border-radius:7px;padding:9px 10px;margin-top:10px;white-space:pre-wrap}.notice-actions{display:flex;gap:6px;flex-shrink:0}.notice-actions button{border:1px solid var(--border);border-radius:7px;background:#f7fafc;color:var(--sub);padding:5px 8px;cursor:pointer;font-weight:800}.notice-actions .finish{color:var(--green)}
+.notice-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px;}.notice-stat{padding:14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.92);box-shadow:var(--shadow-sm);}.notice-stat strong{display:block;font-size:1.45rem;line-height:1.1;margin-bottom:5px;}.notice-stat span{font-size:.74rem;color:var(--sub);font-weight:800;}.notice-stat.updating strong{color:var(--accent);}.notice-stat.reupload strong{color:var(--amber);}.notice-stat.total strong{color:var(--text);}.notice-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 142px 168px auto;gap:8px;margin-bottom:12px}.notice-toolbar input,.notice-toolbar select{width:100%;min-height:42px;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;background-color:#fff;color:var(--text);outline:none}.notice-list{display:grid;gap:10px}.notice-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:14px;box-shadow:var(--shadow-sm)}.notice-card.reupload{border-left-color:var(--amber)}.notice-card.done{border-left-color:var(--green);opacity:.72}.notice-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.notice-course{font-size:.94rem;font-weight:850}.notice-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}.notice-status{font-size:.7rem;font-weight:850;padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}.notice-status.reupload{background:#fff3d8;color:#a06108}.notice-status.done{background:#dff8ea;color:#14794c}.notice-date{font-size:.7rem;color:var(--muted)}.notice-note{font-size:.8rem;color:var(--text);background:var(--panel-soft);border-radius:7px;padding:9px 10px;margin-top:10px;white-space:pre-wrap}.notice-actions{display:flex;gap:6px;flex-shrink:0}.notice-actions button{border:1px solid var(--border);border-radius:7px;background:#f7fafc;color:var(--sub);padding:5px 8px;cursor:pointer;font-weight:800}.notice-actions .finish{color:var(--green)}
 .card,.qcard,.cc,.buyer-card,.group-card{
   background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);
 }
@@ -282,7 +289,7 @@ button{touch-action:manipulation;}
   .logout-btn{padding:6px 10px;}
   .user-avatar{width:30px;height:30px;}
   .tabs{top:6px;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible;padding:4px;gap:3px;margin:0 0 12px;}
-  .notice-summary{grid-template-columns:repeat(3,1fr)}.notice-toolbar{grid-template-columns:1fr 120px}.notice-toolbar .btn-sm{grid-column:1 / -1}.notice-card{padding:12px}.notice-head{gap:6px}
+  .notice-summary{grid-template-columns:repeat(3,1fr)}.notice-toolbar{grid-template-columns:1fr 1fr}.notice-toolbar input,.notice-toolbar .btn-sm{grid-column:1 / -1}.notice-card{padding:12px}.notice-head{gap:6px}
   .tb{font-size:.66rem;min-width:0;min-height:40px;gap:2px;}
   .calendar-card{padding:11px;}.calendar-day{min-height:88px;padding:4px;}.calendar-event{font-size:.6rem;padding:3px 4px;}.calendar-week span{font-size:.62rem;}.calendar-head h2{font-size:.9rem;}
   .card,.qcard,.cc,.buyer-card,.group-card{padding:13px;}
@@ -393,6 +400,7 @@ button{touch-action:manipulation;}
     <div class="notice-toolbar">
       <input id="notice-search" type="search" placeholder="🔍 搜尋課程或公告內容" oninput="renderNotices()"/>
       <select id="notice-filter" onchange="renderNotices()"><option value="active">處理中</option><option value="updating">更新中</option><option value="reupload">待重新上傳</option><option value="done">已完成</option><option value="all">全部</option></select>
+      <select id="notice-sort" onchange="renderNotices()"><option value="course-asc">課程編號 小→大</option><option value="course-desc">課程編號 大→小</option><option value="updated-desc">最近更新</option><option value="updated-asc">最早更新</option></select>
       <button class="btn-sm" onclick="openNoticeEditor()">＋ 新增公告</button>
     </div>
     <div class="notice-list" id="notice-list"></div>
@@ -875,6 +883,10 @@ function noticeCourses(item) {
   return ids.map(function(id,index){var course=findCourseById(id);return course?course.name:(saved[index]||'已刪除的課程');});
 }
 function noticeCourseNames(item) { var names=noticeCourses(item);return names.length?names.join('、'):'未指定課程'; }
+function noticeCourseSortNumber(item) {
+  var nums=noticeNums(item).map(function(num){return parseInt(num,10);}).filter(function(num){return !isNaN(num);});
+  return nums.length?Math.min.apply(Math,nums):99999;
+}
 function formatNoticeDate(value) {
   if(!value) return '';
   var d=new Date(value); if(isNaN(d.getTime())) return '';
@@ -891,11 +903,18 @@ function renderNotices() {
   document.getElementById('notice-updating-count').textContent=updating;
   document.getElementById('notice-reupload-count').textContent=reupload;
   var filter=document.getElementById('notice-filter').value;
+  var sort=document.getElementById('notice-sort').value;
   var q=(document.getElementById('notice-search').value||'').trim().toLowerCase();
   var rows=all.filter(function(item){
     if(filter==='active'&&item.status==='done') return false;
     if(filter!=='active'&&filter!=='all'&&item.status!==filter) return false;
     return !q||(noticeCourseNames(item)+' '+(item.unit||'')+' '+(item.note||'')).toLowerCase().indexOf(q)>=0;
+  });
+  rows.sort(function(a,b){
+    if(sort==='course-asc') return noticeCourseSortNumber(a)-noticeCourseSortNumber(b)||Number(b.updatedAt||b.id)-Number(a.updatedAt||a.id);
+    if(sort==='course-desc') return noticeCourseSortNumber(b)-noticeCourseSortNumber(a)||Number(b.updatedAt||b.id)-Number(a.updatedAt||a.id);
+    if(sort==='updated-asc') return Number(a.updatedAt||a.id)-Number(b.updatedAt||b.id);
+    return Number(b.updatedAt||b.id)-Number(a.updatedAt||a.id);
   });
   var el=document.getElementById('notice-list');
   if(!rows.length){el.innerHTML='<div class="empty">📭 目前沒有符合的公告</div>';return;}
