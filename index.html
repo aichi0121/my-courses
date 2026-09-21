@@ -67,6 +67,7 @@ button{touch-action:manipulation;}
 .tb.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 18px rgba(79,111,232,.20);}
 .tc{display:none;}.tc.on{display:block;}
 .calendar-card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px;}.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}.calendar-head h2{font-size:1rem;font-weight:850;}.calendar-nav{width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--accent);font-size:1.15rem;font-weight:850;cursor:pointer;}.calendar-week,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}.calendar-week span{text-align:center;font-size:.68rem;font-weight:850;color:var(--muted);padding:4px 0;}.calendar-day{min-height:112px;padding:6px;border:1px solid var(--border);background:#fff;overflow:hidden;cursor:pointer;transition:background .15s;}.calendar-day:not(.empty-day):hover,.calendar-day.selected{background:#eef3ff;}.calendar-day.empty-day{background:#f8fafc;}.calendar-day.today{background:#f1f5ff;}.calendar-date{font-size:.72rem;font-weight:850;color:var(--sub);margin-bottom:5px;}.today .calendar-date{color:var(--accent);}.calendar-event{display:block;width:100%;border:none;border-left:3px solid var(--accent);border-radius:4px;background:var(--accent-soft);color:#2b478f;text-align:left;padding:4px 5px;margin:4px 0;font-size:.68rem;font-weight:750;line-height:1.3;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.calendar-event.live{border-left-color:var(--accent2);background:#e6f8f5;color:#08736e;}.calendar-event.done{opacity:.56;text-decoration:line-through;}.calendar-more{font-size:.67rem;color:var(--sub);font-weight:800;padding:2px 4px;}.calendar-tools{display:flex;justify-content:flex-end;margin-bottom:12px;}.calendar-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--sub);margin:13px 0 0;}.calendar-legend span{display:flex;align-items:center;gap:5px;}.calendar-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}.calendar-dot.live{background:var(--accent2);}.calendar-dot.pending{background:#d18b19;}.calendar-detail{margin-top:14px;padding:14px;border-top:1px solid var(--border);}.calendar-detail h3{font-size:.9rem;margin-bottom:9px;}.calendar-detail-card{padding:11px 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft);margin-top:8px;}.calendar-detail-card strong{font-size:.83rem;}.calendar-detail-meta{font-size:.74rem;color:var(--sub);margin-top:5px;}.calendar-detail .bcopy{margin-top:9px;}.unscheduled{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}.unscheduled h3{font-size:.82rem;color:var(--sub);margin-bottom:8px;}.unscheduled-list{display:flex;flex-wrap:wrap;gap:7px;}.unscheduled-item{border:1px solid #f2d08a;background:#fff8e8;color:#986109;padding:6px 9px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;}
+.notice-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px;}.notice-stat{padding:14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.92);box-shadow:var(--shadow-sm);}.notice-stat strong{display:block;font-size:1.45rem;line-height:1.1;margin-bottom:5px;}.notice-stat span{font-size:.74rem;color:var(--sub);font-weight:800;}.notice-stat.updating strong{color:var(--accent);}.notice-stat.reupload strong{color:var(--amber);}.notice-stat.total strong{color:var(--text);}.notice-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:8px;margin-bottom:12px}.notice-toolbar input,.notice-toolbar select{width:100%;min-height:42px;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);outline:none}.notice-list{display:grid;gap:10px}.notice-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:14px;box-shadow:var(--shadow-sm)}.notice-card.reupload{border-left-color:var(--amber)}.notice-card.done{border-left-color:var(--green);opacity:.72}.notice-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.notice-course{font-size:.94rem;font-weight:850}.notice-unit{font-size:.8rem;color:var(--sub);margin-top:4px}.notice-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}.notice-status{font-size:.7rem;font-weight:850;padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}.notice-status.reupload{background:#fff3d8;color:#a06108}.notice-status.done{background:#dff8ea;color:#14794c}.notice-date{font-size:.7rem;color:var(--muted)}.notice-note{font-size:.8rem;color:var(--text);background:var(--panel-soft);border-radius:7px;padding:9px 10px;margin-top:10px;white-space:pre-wrap}.notice-actions{display:flex;gap:6px;flex-shrink:0}.notice-actions button{border:1px solid var(--border);border-radius:7px;background:#f7fafc;color:var(--sub);padding:5px 8px;cursor:pointer;font-weight:800}.notice-actions .finish{color:var(--green)}
 .card,.qcard,.cc,.buyer-card,.group-card{
   background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);
 }
@@ -266,7 +267,7 @@ button{touch-action:manipulation;}
 
 @media (min-width:900px){
   body{padding-top:26px;}
-  .tc#tc-add.on,.tc#tc-batch.on{max-width:760px;margin:0 auto;}
+  .tc#tc-add.on{max-width:760px;margin:0 auto;}
   .tc#tc-quick.on{max-width:860px;margin:0 auto;}
   #tc-list.on .sbar,#tc-list.on .sort-row,#tc-list.on .cnt,#tc-list.on #list,#tc-list.on #fbar{max-width:860px;margin-left:auto;margin-right:auto;}
   .cc,.buyer-card,.group-card{padding:16px;box-shadow:0 10px 28px rgba(34,48,71,.07);}
@@ -281,6 +282,7 @@ button{touch-action:manipulation;}
   .logout-btn{padding:6px 10px;}
   .user-avatar{width:30px;height:30px;}
   .tabs{top:6px;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible;padding:4px;gap:3px;margin:0 0 12px;}
+  .notice-summary{grid-template-columns:repeat(3,1fr)}.notice-toolbar{grid-template-columns:1fr 120px}.notice-toolbar .btn-sm{grid-column:1 / -1}.notice-card{padding:12px}.notice-head{gap:6px}
   .tb{font-size:.66rem;min-width:0;min-height:40px;gap:2px;}
   .calendar-card{padding:11px;}.calendar-day{min-height:88px;padding:4px;}.calendar-event{font-size:.6rem;padding:3px 4px;}.calendar-week span{font-size:.62rem;}.calendar-head h2{font-size:.9rem;}
   .card,.qcard,.cc,.buyer-card,.group-card{padding:13px;}
@@ -352,9 +354,9 @@ button{touch-action:manipulation;}
   <div class="tabs">
     <button class="tb on" onclick="goTab('list',this)">📋 列表</button>
     <button class="tb" onclick="goTab('calendar',this)">🗓️ 日曆</button>
+    <button class="tb" onclick="goTab('notices',this)">📣 公告</button>
     <button class="tb" onclick="goTab('quick',this)">⚡ 查詢</button>
     <button class="tb" onclick="goTab('add',this)">➕ 新增</button>
-    <button class="tb" onclick="goTab('batch',this)">📥 匯入</button>
     <button class="tb" onclick="goTab('buyers',this)">👥 合購</button>
   </div>
   <div class="tc on" id="tc-list">
@@ -382,6 +384,19 @@ button{touch-action:manipulation;}
       <div class="calendar-legend"><span><i class="calendar-dot"></i>一般開課</span><span><i class="calendar-dot live"></i>直播課</span></div>
     </div>
   </div>
+  <div class="tc" id="tc-notices">
+    <div class="notice-summary">
+      <div class="notice-stat total"><strong id="notice-active-count">0</strong><span>處理中</span></div>
+      <div class="notice-stat updating"><strong id="notice-updating-count">0</strong><span>更新中</span></div>
+      <div class="notice-stat reupload"><strong id="notice-reupload-count">0</strong><span>待重新上傳</span></div>
+    </div>
+    <div class="notice-toolbar">
+      <input id="notice-search" type="search" placeholder="🔍 搜尋課程或單元" oninput="renderNotices()"/>
+      <select id="notice-filter" onchange="renderNotices()"><option value="active">處理中</option><option value="updating">更新中</option><option value="reupload">待重新上傳</option><option value="done">已完成</option><option value="all">全部</option></select>
+      <button class="btn-sm" onclick="openNoticeEditor()">＋ 新增公告</button>
+    </div>
+    <div class="notice-list" id="notice-list"></div>
+  </div>
   <div class="tc" id="tc-quick">
     <div class="qcard">
       <h2>⚡ 快速查詢</h2>
@@ -394,6 +409,11 @@ button{touch-action:manipulation;}
     </div>
   </div>
   <div class="tc" id="tc-add">
+    <div class="bsec-tabs">
+      <button class="bstab on" onclick="goAddTab('single',this)">➕ 單堂新增</button>
+      <button class="bstab" onclick="goAddTab('batch',this)">📥 批次匯入</button>
+    </div>
+    <div id="atc-single">
     <div class="card">
       <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:11px;">➕ 新增課程</h2>
       <div class="fg"><label>課程類型</label><select id="a-type" onchange="toggleCourseType('a')"><option value="normal">一般課程</option><option value="live">直播課</option></select></div>
@@ -413,8 +433,8 @@ button{touch-action:manipulation;}
       <div class="fg"><label>📝 備註（選填）</label><textarea id="a-note" placeholder="講師、說明..."></textarea></div>
       <button class="btn-g" onclick="addCourse()">新增課程</button>
     </div>
-  </div>
-  <div class="tc" id="tc-batch">
+    </div>
+    <div id="atc-batch" style="display:none">
     <div class="card">
       <h2 style="font-size:.86rem;color:var(--sub);margin-bottom:9px;">📥 批次匯入</h2>
       <div class="bhint">每堂課空一行格式：<br>課程名稱<br>YT（中文）：連結<br>載點：連結</div>
@@ -431,6 +451,7 @@ button{touch-action:manipulation;}
         <button class="bimp" id="b-imp" onclick="importBatch()" disabled>✅ 確認匯入</button>
       </div>
       <div id="bprev"></div>
+    </div>
     </div>
   </div>
   <div class="tc" id="tc-buyers">
@@ -555,6 +576,15 @@ button{touch-action:manipulation;}
     <button class="mcancel" onclick="closeMo('editMo')">取消</button>
     <button class="msave" onclick="saveEdit()">💾 儲存</button>
   </div>
+</div></div>
+<div class="mo" id="noticeMo"><div class="mbox">
+  <h3 id="notice-mo-title">📣 新增公告</h3>
+  <input type="hidden" id="ne-id"/>
+  <div class="fg"><label>課程 *</label><select id="ne-course"></select></div>
+  <div class="fg"><label>單元／內容 *</label><input id="ne-unit" type="text" placeholder="例：第 8 單元、完整播放清單"/></div>
+  <div class="fg"><label>狀態</label><select id="ne-status"><option value="updating">🔄 更新中</option><option value="reupload">⬆️ 待重新上傳</option><option value="done">✅ 已完成</option></select></div>
+  <div class="fg"><label>備註（選填）</label><textarea id="ne-note" placeholder="例：講師正在重錄，完成後補上新連結"></textarea></div>
+  <div class="macts"><button class="mcancel" onclick="closeMo('noticeMo')">取消</button><button class="msave" onclick="saveNotice()">💾 儲存</button></div>
 </div></div>
 <div class="mo" id="calendarMo"><div class="mbox">
   <h3 id="calendar-mo-title">🗓️ 新增開課安排</h3>
@@ -684,6 +714,7 @@ let _cats = [];
 let _gs = {};
 let _buyers = [];
 let _buyerGroups = [];
+let _notices = [];
 let _uid = null;
 
 // ── Firebase 讀寫 ──
@@ -709,6 +740,8 @@ function lb() { return _buyers; }
 function sb(d) { _buyers = d; fbSet('buyers', d); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
 function lbg() { return _buyerGroups; }
 function sbg(d) { _buyerGroups = d; fbSet('buyerGroups', d); refreshBuyerGroupSels(); renderBuyerGroups(); if(typeof renderJoinList==='function') renderJoinList(); }
+function ln() { return _notices; }
+function sn(d) { _notices = d; fbSet('notices', d); renderNotices(); }
 
 // ── 登入 / 登出 ──
 window.signInWithGoogle = async function() {
@@ -734,14 +767,15 @@ onAuthStateChanged(auth, async (user) => {
     if (avatar && user.photoURL) avatar.src = user.photoURL;
 
     // 從 Firestore 載入資料
-    const [courses, cats, gs, buyers, buyerGroups] = await Promise.all([
-      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers'), fbGet('buyerGroups')
+    const [courses, cats, gs, buyers, buyerGroups, notices] = await Promise.all([
+      fbGet('courses'), fbGet('cats'), fbGet('gs'), fbGet('buyers'), fbGet('buyerGroups'), fbGet('notices')
     ]);
     _courses = Array.isArray(courses) ? courses : [];
     _cats = Array.isArray(cats) ? cats : [];
     _gs = (gs && typeof gs === 'object' && !Array.isArray(gs)) ? gs : {};
     _buyers = Array.isArray(buyers) ? buyers : [];
     _buyerGroups = Array.isArray(buyerGroups) ? buyerGroups : [];
+    _notices = Array.isArray(notices) ? notices : [];
 
     loading.classList.add('hide');
     loginScreen.classList.add('hide');
@@ -813,6 +847,7 @@ function goTab(tab,btn) {
   if(btn) btn.classList.add('on');
   if(tab==='list') renderList();
   if(tab==='calendar') renderCalendar();
+  if(tab==='notices') renderNotices();
   if(tab==='add'){
     document.getElementById('a-type').value='normal';
     clearYt('a-yt');addYtRow('a-yt','','');clearOtherLinks('a-other-links');clearSubs('a-subs');
@@ -822,6 +857,88 @@ function goTab(tab,btn) {
   refreshSels();
 }
 window.goTab = goTab;
+function goAddTab(tab,btn) {
+  document.getElementById('atc-single').style.display=tab==='single'?'block':'none';
+  document.getElementById('atc-batch').style.display=tab==='batch'?'block':'none';
+  document.querySelectorAll('#tc-add .bsec-tabs .bstab').forEach(function(el){el.classList.remove('on');});
+  if(btn) btn.classList.add('on');
+}
+window.goAddTab=goAddTab;
+
+function noticeStatusLabel(status) {
+  if(status==='reupload') return '⬆️ 待重新上傳';
+  if(status==='done') return '✅ 已完成';
+  return '🔄 更新中';
+}
+function noticeCourseName(item) {
+  var course=findCourseById(item.courseId);
+  return course?course.name:(item.courseName||'已刪除的課程');
+}
+function formatNoticeDate(value) {
+  if(!value) return '';
+  var d=new Date(value); if(isNaN(d.getTime())) return '';
+  return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+}
+function renderNotices() {
+  var all=ln().slice().sort(function(a,b){return Number(b.updatedAt||b.id)-Number(a.updatedAt||a.id);});
+  var active=all.filter(function(item){return item.status!=='done';});
+  var updating=active.filter(function(item){return item.status==='updating';}).length;
+  var reupload=active.filter(function(item){return item.status==='reupload';}).length;
+  var activeEl=document.getElementById('notice-active-count');
+  if(!activeEl) return;
+  activeEl.textContent=active.length;
+  document.getElementById('notice-updating-count').textContent=updating;
+  document.getElementById('notice-reupload-count').textContent=reupload;
+  var filter=document.getElementById('notice-filter').value;
+  var q=(document.getElementById('notice-search').value||'').trim().toLowerCase();
+  var rows=all.filter(function(item){
+    if(filter==='active'&&item.status==='done') return false;
+    if(filter!=='active'&&filter!=='all'&&item.status!==filter) return false;
+    return !q||(noticeCourseName(item)+' '+(item.unit||'')+' '+(item.note||'')).toLowerCase().indexOf(q)>=0;
+  });
+  var el=document.getElementById('notice-list');
+  if(!rows.length){el.innerHTML='<div class="empty">📭 目前沒有符合的公告</div>';return;}
+  el.innerHTML=rows.map(function(item){
+    var status=item.status||'updating';
+    var note=item.note?'<div class="notice-note">'+esc(item.note)+'</div>':'';
+    var finish=status==='done'?'':'<button class="finish" data-id="'+item.id+'" onclick="finishNotice(this)">完成</button>';
+    return '<article class="notice-card '+status+'"><div class="notice-head"><div><div class="notice-course">'+esc(noticeCourseName(item))+'</div><div class="notice-unit">'+esc(item.unit||'未填單元')+'</div></div><div class="notice-actions">'+finish+'<button data-id="'+item.id+'" onclick="openNoticeEditor(this)">編輯</button><button data-id="'+item.id+'" onclick="deleteNotice(this)">刪除</button></div></div><div class="notice-meta"><span class="notice-status '+status+'">'+noticeStatusLabel(status)+'</span><span class="notice-date">更新於 '+esc(formatNoticeDate(item.updatedAt||item.id))+'</span></div>'+note+'</article>';
+  }).join('');
+}
+window.renderNotices=renderNotices;
+function fillNoticeCourseSelect(selectedId) {
+  var select=document.getElementById('ne-course');
+  select.innerHTML='<option value="">— 選擇課程 —</option>'+sortArr(lc()).map(function(course){return '<option value="'+esc(course.id)+'">'+esc(course.name)+'</option>';}).join('');
+  select.value=selectedId?String(selectedId):'';
+}
+function openNoticeEditor(btn) {
+  var item=btn?ln().find(function(row){return String(row.id)===String(btn.dataset.id);}):null;
+  document.getElementById('notice-mo-title').textContent=item?'✏️ 編輯公告':'📣 新增公告';
+  document.getElementById('ne-id').value=item?item.id:'';
+  fillNoticeCourseSelect(item&&item.courseId);
+  document.getElementById('ne-unit').value=item?item.unit||'':'';
+  document.getElementById('ne-status').value=item?item.status||'updating':'updating';
+  document.getElementById('ne-note').value=item?item.note||'':'';
+  openMo('noticeMo');
+}
+window.openNoticeEditor=openNoticeEditor;
+function saveNotice() {
+  var courseId=document.getElementById('ne-course').value;
+  var unit=document.getElementById('ne-unit').value.trim();
+  if(!courseId){toast('⚠️ 請選擇課程');return;}
+  if(!unit){toast('⚠️ 請輸入單元或內容');return;}
+  var course=findCourseById(courseId), id=document.getElementById('ne-id').value;
+  var data=ln().slice(), now=Date.now();
+  var payload={courseId:courseId,courseName:course?course.name:'',unit:unit,status:document.getElementById('ne-status').value,note:document.getElementById('ne-note').value.trim(),updatedAt:now};
+  if(id){var index=data.findIndex(function(item){return String(item.id)===String(id);});if(index>=0)data[index]=Object.assign({},data[index],payload);}
+  else data.unshift(Object.assign({id:now},payload));
+  sn(data);closeMo('noticeMo');toast('✅ 公告已儲存');
+}
+window.saveNotice=saveNotice;
+function finishNotice(btn){var data=ln().slice(),item=data.find(function(row){return String(row.id)===String(btn.dataset.id);});if(!item)return;item.status='done';item.updatedAt=Date.now();sn(data);toast('✅ 已標記完成');}
+window.finishNotice=finishNotice;
+function deleteNotice(btn){if(!confirm('確定刪除此公告？'))return;sn(ln().filter(function(row){return String(row.id)!==String(btn.dataset.id);}));toast('🗑️ 公告已刪除');}
+window.deleteNotice=deleteNotice;
 
 function calendarDateKey(y,m,d) { return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
 function moveCalendar(delta) { calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); selectedCalendarDate=''; renderCalendar(); }
